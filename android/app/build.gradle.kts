@@ -1,0 +1,42 @@
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    // Flutter Gradle Plugin (must be last)
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
+android {
+    namespace = "com.example.business_card_app"
+    compileSdk = flutter.compileSdkVersion
+
+    // ✅ Force correct NDK version (fix plugin error)
+    ndkVersion = "27.0.12077973"
+
+    defaultConfig {
+        applicationId = "com.example.business_card_app"
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            // Debug signing for now (ok for development)
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+flutter {
+    source = "../.."
+}
