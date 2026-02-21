@@ -22,7 +22,7 @@ dependencies:
   provider: ^6.1.2
 
   # =============================
-  # NETWORKING (REFERENCE STYLE)
+  # NETWORKING
   # =============================
   dio: ^5.4.3
   retrofit: ^4.1.0
@@ -51,8 +51,26 @@ dev_dependencies:
   retrofit_generator: ^8.1.0
   json_serializable: ^6.8.0
 
+  # =============================
+  # APP ICON
+  # =============================
+  flutter_launcher_icons: ^0.13.1
+
+# =============================
+# FLUTTER CONFIG
+# =============================
 flutter:
   uses-material-design: true
 
   assets:
     - assets/images/ABW.png
+    - assets/images/login.png
+    - assets/images/businessCard4U.png
+
+# =============================
+# LAUNCHER ICON CONFIG
+# =============================
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/businessCard4U.png"

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'bloc/auth/auth_provider.dart';
+import 'bloc/card/card_provider.dart';
 import 'auth_gate.dart';
 
 void main() {
@@ -12,8 +14,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AuthProvider()..checkLogin(),
+    return MultiProvider(
+      providers: [
+
+        /// ================= AUTH PROVIDER =================
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider()..checkLogin(),
+        ),
+
+        /// ================= CARD PROVIDER =================
+        ChangeNotifierProvider(
+          create: (_) => CardProvider(),
+        ),
+
+      ],
       child: const MaterialApp(
         debugShowCheckedModeBanner: false,
         home: AuthGate(),
