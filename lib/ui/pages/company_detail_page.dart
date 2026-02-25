@@ -1,0 +1,272 @@
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../data/models/company_model.dart';
+
+class CompanyDetailPage extends StatelessWidget {
+  final CompanyModel company;
+
+  const CompanyDetailPage({super.key, required this.company});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFD),
+      body: CustomScrollView(
+        slivers: [
+          _buildAppBar(context),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildMainInfo(),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle("Contact Details"),
+                  _buildContactCard(),
+                  const SizedBox(height: 24),
+                  if (company.description != null && company.description!.isNotEmpty) ...[
+                    _buildSectionTitle("About Company"),
+                    _buildAboutCard(),
+                    const SizedBox(height: 24),
+                  ],
+                  if (company.socials.isNotEmpty) ...[
+                    _buildSectionTitle("Social Presence"),
+                    _buildSocialsCard(),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppBar(BuildContext context) {
+    return SliverAppBar(
+      expandedHeight: 180,
+      pinned: true,
+      backgroundColor: const Color(0xFF1E3C72),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+        onPressed: () => Navigator.pop(context),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF1E3C72), Color(0xFF2A5298)],
+            ),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 40),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.business_rounded, color: Colors.white, size: 48),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  company.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainInfo() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          _infoItem(Icons.category_rounded, company.industry ?? "General"),
+          const VerticalDivider(),
+          _infoItem(Icons.work_outline_rounded, company.businessType ?? "Corporate"),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoItem(IconData icon, String text) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: const Color(0xFF2563EB), size: 24),
+          const SizedBox(height: 8),
+          Text(
+            text,
+            style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF1F2937),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          if (company.email != null)
+            _contactTile(
+              Icons.email_outlined,
+              company.email!,
+              onTap: () => _launchEmail(company.email!),
+            ),
+          if (company.phone != null)
+            _contactTile(
+              Icons.phone_android_rounded,
+              company.phone!,
+              onTap: () => _launchPhone(company.phone!),
+            ),
+          if (company.website != null)
+            _contactTile(
+              Icons.language_rounded,
+              company.website!,
+              onTap: () => _launchWebsite(company.website!),
+            ),
+          if (company.address != null)
+            _contactTile(
+              Icons.location_on_outlined,
+              company.address!,
+              onTap: () => _launchMaps(company.address!),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _contactTile(IconData icon, String text, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.blueGrey, size: 20),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(color: Colors.black87, fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAboutCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        company.description!,
+        style: const TextStyle(color: Colors.black54, height: 1.5),
+      ),
+    );
+  }
+
+  Widget _buildSocialsCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: company.socials.map((s) => _socialChip(s.platform)).toList(),
+      ),
+    );
+  }
+
+  Widget _socialChip(String platform) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2563EB).withOpacity(0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.1)),
+      ),
+      child: Text(
+        platform,
+        style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold, fontSize: 12),
+      ),
+    );
+  }
+
+  Future<void> _launchEmail(String email) async {
+    final uri = Uri(scheme: 'mailto', path: email);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _launchPhone(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    await launchUrl(uri);
+  }
+
+  Future<void> _launchWebsite(String url) async {
+    final hasScheme = url.startsWith('http://') || url.startsWith('https://');
+    final uri = Uri.parse(hasScheme ? url : 'https://$url');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _launchMaps(String query) async {
+    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+}

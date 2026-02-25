@@ -15,7 +15,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _showToast(String message, {bool isError = false}) {
     final overlay = Overlay.of(context);
-    if (overlay == null) return;
 
     final entry = OverlayEntry(
       builder: (_) => Positioned(

@@ -5,6 +5,8 @@ import '../../bloc/auth/auth_provider.dart';
 import '../../bloc/card/card_provider.dart';
 import '../components/loading_view.dart';
 import '../components/card_item.dart';
+import 'add_card_page.dart';
+import 'company_select_page.dart';
 
 class CardPage extends StatefulWidget {
   const CardPage({super.key});
@@ -60,6 +62,16 @@ class _CardPageState extends State<CardPage> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.business_rounded, color: Color(0xFF2563EB)),
+            tooltip: "Manage Companies",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CompanySelectPage()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.black87),
             onPressed: () {
@@ -155,7 +167,13 @@ class _CardPageState extends State<CardPage> {
         backgroundColor: const Color(0xFF2563EB),
         elevation: 6,
         onPressed: () {
-          // Navigate to add card page
+          Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => const AddCardPage()))
+              .then((created) {
+            if (created == true) {
+              context.read<CardProvider>().fetchCards();
+            }
+          });
         },
         child: const Icon(Icons.add),
       ),

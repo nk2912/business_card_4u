@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'bloc/auth/auth_provider.dart';
 import 'bloc/card/card_provider.dart';
+import 'bloc/company/company_provider.dart';
 import 'auth_gate.dart';
 
 void main() {
@@ -25,6 +26,11 @@ class MyApp extends StatelessWidget {
         /// ================= CARD PROVIDER =================
         ChangeNotifierProvider(
           create: (_) => CardProvider(),
+        ),
+
+        /// ================= COMPANY PROVIDER =================
+        ChangeNotifierProvider(
+          create: (_) => CompanyProvider(),
         ),
 
       ],
