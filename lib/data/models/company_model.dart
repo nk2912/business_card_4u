@@ -27,7 +27,9 @@ class CompanyModel {
 
   factory CompanyModel.fromJson(Map<String, dynamic> json) {
     return CompanyModel(
-      id: json['id'],
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id'].toString()) ?? 0,
       name: json['name'] ?? '',
       industry: json['industry'],
       businessType: json['business_type'],
@@ -36,9 +38,12 @@ class CompanyModel {
       website: json['website'],
       phone: json['phone'],
       email: json['email'],
-      socials: (json['socials'] as List? ?? [])
-          .map((e) => CompanySocialModel.fromJson(e))
-          .toList(),
+      socials: (json['socials'] as List? ?? []).map((e) {
+        if (e is Map) {
+          return CompanySocialModel.fromJson(Map<String, dynamic>.from(e));
+        }
+        return CompanySocialModel(id: 0, platform: '', url: '');
+      }).toList(),
     );
   }
 }

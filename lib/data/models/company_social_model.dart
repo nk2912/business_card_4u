@@ -11,7 +11,7 @@ class CompanySocialModel {
 
   factory CompanySocialModel.fromJson(Map<String, dynamic> json) {
     return CompanySocialModel(
-      id: json['id'],
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       platform: json['platform'] ?? '',
       url: json['url'] ?? '',
     );

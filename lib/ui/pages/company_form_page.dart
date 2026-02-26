@@ -55,15 +55,14 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final provider = context.read<CompanyProvider>();
+    
+    // Construct payload with required fields always included
     final payload = <String, dynamic>{
       'name': _nameCtrl.text.trim(),
+      'industry': _industryCtrl.text.trim(),
+      'business_type': _businessTypeCtrl.text.trim(),
     };
-    if (_industryCtrl.text.trim().isNotEmpty) {
-      payload['industry'] = _industryCtrl.text.trim();
-    }
-    if (_businessTypeCtrl.text.trim().isNotEmpty) {
-      payload['business_type'] = _businessTypeCtrl.text.trim();
-    }
+
     if (_descriptionCtrl.text.trim().isNotEmpty) {
       payload['description'] = _descriptionCtrl.text.trim();
     }
@@ -91,9 +90,10 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
     if (result != null) {
       Navigator.of(context).pop(result);
     } else {
+      final errorMsg = provider.errorMessage ?? 'Failed to save company details';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to save company details'),
+        SnackBar(
+          content: Text(errorMsg),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ),
@@ -178,14 +178,16 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
                       Expanded(
                         child: TextFormField(
                           controller: _industryCtrl,
-                          decoration: _inputDecoration('Industry', Icons.category_rounded),
+                          decoration: _inputDecoration('Industry *', Icons.category_rounded),
+                          validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextFormField(
                           controller: _businessTypeCtrl,
-                          decoration: _inputDecoration('Type', Icons.work_outline_rounded),
+                          decoration: _inputDecoration('Type *', Icons.work_outline_rounded),
+                          validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
                         ),
                       ),
                     ],

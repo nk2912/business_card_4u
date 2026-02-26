@@ -1,4 +1,5 @@
 class CreateCardRequest {
+  final String? name; // Added name
   final int? companyId;
   final String? position;
   final List<String>? phones;
@@ -8,6 +9,7 @@ class CreateCardRequest {
   final String? profileImage;
 
   CreateCardRequest({
+    this.name,
     this.companyId,
     this.position,
     this.phones,
@@ -19,6 +21,7 @@ class CreateCardRequest {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {};
+    if (name != null && name!.isNotEmpty) data['name'] = name; // Include name
     if (companyId != null) data['company_id'] = companyId;
     if (position != null && position!.isNotEmpty) data['position'] = position;
     if (phones != null && phones!.isNotEmpty) data['phones'] = phones;

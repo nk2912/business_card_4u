@@ -22,4 +22,7 @@ abstract class AuthApi {
 
   /// ================= LOGOUT =================
   Future<void> logout();
+
+  /// ================= GET PROFILE =================
+  Future<Map<String, dynamic>> getProfile();
 }

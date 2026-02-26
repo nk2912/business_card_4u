@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../bloc/card/card_provider.dart';
 import '../../data/models/business_card_model.dart';
 import '../pages/card_detail_page.dart';
 
@@ -9,6 +11,10 @@ class CardItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Check if it's a "User Card" (not my card, and not yet a friend)
+    // We can infer this if cardType == 'user_card' and !isFriend
+    final showAddFriend = !card.isFriend && card.cardType == 'user_card';
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
@@ -86,6 +92,22 @@ class CardItem extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (showAddFriend)
+                      IconButton(
+                        icon: const Icon(Icons.person_add, color: Colors.white),
+                        tooltip: "Add Friend",
+                        onPressed: () async {
+                          final success = await context.read<CardProvider>().addFriend(card.id);
+                          if (success && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Friend added successfully"),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        },
+                      ),
                   ],
                 ),
 

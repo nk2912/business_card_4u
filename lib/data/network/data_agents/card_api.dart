@@ -4,4 +4,8 @@ import '../responses/card_response.dart';
 abstract class CardApi {
   Future<CardResponse> getCards();
   Future<BusinessCardModel> createCard(Map<String, dynamic> data);
+  Future<BusinessCardModel> updateCard(int id, Map<String, dynamic> data);
+  Future<void> deleteCard(int id);
+  Future<void> addFriend(int cardId);
+  Future<void> removeFriend(int cardId);
 }

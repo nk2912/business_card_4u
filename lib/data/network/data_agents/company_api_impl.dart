@@ -13,39 +13,64 @@ class CompanyApiImpl implements CompanyApi {
   Future<List<CompanyModel>> listCompanies() async {
     final Response res = await dio.get(ApiConstants.companies);
     final dynamic body = res.data;
-    final List data = body is List ? body : (body['data'] as List? ?? []);
-    return data.map((e) => CompanyModel.fromJson(e as Map<String, dynamic>)).toList();
-    }
+    
+    // Ensure body is handled properly
+    final List rawList = body is List 
+        ? body 
+        : (body is Map ? (body['data'] as List? ?? []) : []);
+        
+    return rawList.map((e) {
+      if (e is Map) {
+        return CompanyModel.fromJson(Map<String, dynamic>.from(e));
+      }
+      return CompanyModel.fromJson({}); // Fallback for malformed items
+    }).toList();
+  }
 
   @override
   Future<CompanyModel> getCompany(int id) async {
     final Response res = await dio.get('${ApiConstants.companies}/$id');
-    final dynamic body = res.data;
-    final Map<String, dynamic> json =
-        body is Map<String, dynamic> ? (body['data'] as Map<String, dynamic>? ?? body) : {};
-    return CompanyModel.fromJson(json);
+    return _parseCompanyResponse(res.data);
   }
 
   @override
   Future<CompanyModel> createCompany(Map<String, dynamic> data) async {
     final Response res = await dio.post(ApiConstants.companies, data: data);
-    final dynamic body = res.data;
-    final Map<String, dynamic> json =
-        body is Map<String, dynamic> ? (body['data'] as Map<String, dynamic>? ?? body) : {};
-    return CompanyModel.fromJson(json);
+    return _parseCompanyResponse(res.data);
   }
 
   @override
   Future<CompanyModel> updateCompany(int id, Map<String, dynamic> data) async {
     final Response res = await dio.put('${ApiConstants.companies}/$id', data: data);
-    final dynamic body = res.data;
-    final Map<String, dynamic> json =
-        body is Map<String, dynamic> ? (body['data'] as Map<String, dynamic>? ?? body) : {};
-    return CompanyModel.fromJson(json);
+    return _parseCompanyResponse(res.data);
   }
 
   @override
   Future<void> deleteCompany(int id) async {
     await dio.delete('${ApiConstants.companies}/$id');
+  }
+
+  /// Helper to parse single company response safely
+  CompanyModel _parseCompanyResponse(dynamic body) {
+    if (body == null) {
+      throw Exception("Response body is null");
+    }
+
+    Map<String, dynamic> jsonMap = {};
+
+    if (body is Map) {
+      // If response has 'data' key (Laravel Resource), use it
+      if (body.containsKey('data') && body['data'] is Map) {
+        jsonMap = Map<String, dynamic>.from(body['data']);
+      } else {
+        // Otherwise use the body itself
+        jsonMap = Map<String, dynamic>.from(body);
+      }
+    } else {
+      // Should not happen for valid JSON object response
+      throw Exception("Unexpected response format: expected Map, got ${body.runtimeType}");
+    }
+
+    return CompanyModel.fromJson(jsonMap);
   }
 }

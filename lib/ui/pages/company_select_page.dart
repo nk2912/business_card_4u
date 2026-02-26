@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../bloc/company/company_provider.dart';
 import '../../data/models/company_model.dart';
-import 'company_detail_page.dart';
+// import 'company_detail_page.dart';
 import 'company_form_page.dart';
 
 class CompanySelectPage extends StatefulWidget {
@@ -183,14 +183,7 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => CompanyDetailPage(company: company)),
-            );
-          },
-          onLongPress: () => Navigator.of(context).pop<CompanyModel>(company),
+          onTap: () => Navigator.of(context).pop<CompanyModel>(company),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -232,6 +225,7 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
                   ),
                 ),
                 Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
                       visualDensity: VisualDensity.compact,

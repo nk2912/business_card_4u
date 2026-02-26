@@ -27,6 +27,7 @@ class CardProvider extends ChangeNotifier {
   }
 
   Future<bool> createCard({
+    String? name,
     int? companyId,
     String? position,
     List<String>? phones,
@@ -40,6 +41,7 @@ class CardProvider extends ChangeNotifier {
       notifyListeners();
 
       final request = CreateCardRequest(
+        name: name,
         companyId: companyId,
         position: position,
         phones: phones,
@@ -58,6 +60,82 @@ class CardProvider extends ChangeNotifier {
     } finally {
       isCreating = false;
       notifyListeners();
+    }
+  }
+
+  Future<bool> updateCard(int id, {
+    String? name,
+    int? companyId,
+    String? position,
+    List<String>? phones,
+    List<String>? emails,
+    List<String>? addresses,
+    String? bio,
+    String? profileImage,
+  }) async {
+    try {
+      isCreating = true;
+      notifyListeners();
+
+      final request = CreateCardRequest(
+        name: name,
+        companyId: companyId,
+        position: position,
+        phones: phones,
+        emails: emails,
+        addresses: addresses,
+        bio: bio,
+        profileImage: profileImage,
+      );
+
+      final updated = await _api.updateCard(id, request.toJson());
+      final index = cards.indexWhere((c) => c.id == id);
+      if (index != -1) {
+        cards[index] = updated;
+      }
+      return true;
+    } catch (e) {
+      debugPrint("UPDATE CARD ERROR: $e");
+      return false;
+    } finally {
+      isCreating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deleteCard(int id) async {
+    try {
+      await _api.deleteCard(id);
+      cards.removeWhere((c) => c.id == id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint("DELETE CARD ERROR: $e");
+      return false;
+    }
+  }
+
+  Future<bool> addFriend(int cardId) async {
+    try {
+      await _api.addFriend(cardId);
+      // Refresh list to update UI
+      await fetchCards();
+      return true;
+    } catch (e) {
+      debugPrint("ADD FRIEND ERROR: $e");
+      return false;
+    }
+  }
+
+  Future<bool> removeFriend(int cardId) async {
+    try {
+      await _api.removeFriend(cardId);
+      // Refresh list to update UI
+      await fetchCards();
+      return true;
+    } catch (e) {
+      debugPrint("REMOVE FRIEND ERROR: $e");
+      return false;
     }
   }
 }

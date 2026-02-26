@@ -99,4 +99,17 @@ class AuthApiImpl implements AuthApi {
       );
     }
   }
+
+  /// ================= GET PROFILE =================
+  @override
+  Future<Map<String, dynamic>> getProfile() async {
+    try {
+      final res = await dio.post(ApiConstants.me);
+      return res.data['user'];
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data['message'] ?? 'Fetch profile failed',
+      );
+    }
+  }
 }

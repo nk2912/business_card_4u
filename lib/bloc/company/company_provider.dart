@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 
 import '../../core/network/dio_client.dart';
 import '../../data/models/company_model.dart';
@@ -9,14 +10,30 @@ class CompanyProvider extends ChangeNotifier {
 
   bool isLoading = false;
   bool isSaving = false;
+  String? errorMessage;
   List<CompanyModel> companies = [];
+
+  String _extractErrorMessage(dynamic e) {
+    if (e is DioException) {
+      if (e.response != null && e.response!.data != null) {
+        final data = e.response!.data;
+        if (data is Map && data['message'] != null) {
+          return data['message'].toString();
+        }
+      }
+      return e.message ?? "Network Error";
+    }
+    return e.toString().replaceFirst("Exception: ", "");
+  }
 
   Future<void> fetchCompanies() async {
     try {
       isLoading = true;
+      errorMessage = null;
       notifyListeners();
       companies = await _api.listCompanies();
     } catch (e) {
+      errorMessage = _extractErrorMessage(e);
       debugPrint('COMPANY FETCH ERROR: $e');
     } finally {
       isLoading = false;
@@ -27,12 +44,15 @@ class CompanyProvider extends ChangeNotifier {
   Future<CompanyModel?> createCompany(Map<String, dynamic> data) async {
     try {
       isSaving = true;
+      errorMessage = null;
       notifyListeners();
       final company = await _api.createCompany(data);
       companies = [company, ...companies];
       return company;
-    } catch (e) {
+    } catch (e, stack) {
+      errorMessage = _extractErrorMessage(e);
       debugPrint('COMPANY CREATE ERROR: $e');
+      debugPrint('STACK: $stack');
       return null;
     } finally {
       isSaving = false;
@@ -43,6 +63,7 @@ class CompanyProvider extends ChangeNotifier {
   Future<CompanyModel?> updateCompany(int id, Map<String, dynamic> data) async {
     try {
       isSaving = true;
+      errorMessage = null;
       notifyListeners();
       final updated = await _api.updateCompany(id, data);
       final idx = companies.indexWhere((c) => c.id == id);
@@ -51,8 +72,10 @@ class CompanyProvider extends ChangeNotifier {
         companies = List.of(companies);
       }
       return updated;
-    } catch (e) {
+    } catch (e, stack) {
+      errorMessage = _extractErrorMessage(e);
       debugPrint('COMPANY UPDATE ERROR: $e');
+      debugPrint('STACK: $stack');
       return null;
     } finally {
       isSaving = false;
@@ -62,11 +85,13 @@ class CompanyProvider extends ChangeNotifier {
 
   Future<bool> deleteCompany(int id) async {
     try {
+      errorMessage = null;
       await _api.deleteCompany(id);
       companies.removeWhere((c) => c.id == id);
       notifyListeners();
       return true;
     } catch (e) {
+      errorMessage = _extractErrorMessage(e);
       debugPrint('COMPANY DELETE ERROR: $e');
       return false;
     }
