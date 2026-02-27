@@ -10,6 +10,7 @@ class CompanyModel {
   final String? website;
   final String? phone;
   final String? email;
+  final int? createdBy;
   final List<CompanySocialModel> socials;
 
   CompanyModel({
@@ -22,6 +23,7 @@ class CompanyModel {
     this.website,
     this.phone,
     this.email,
+    this.createdBy,
     required this.socials,
   });
 
@@ -38,6 +40,9 @@ class CompanyModel {
       website: json['website'],
       phone: json['phone'],
       email: json['email'],
+      createdBy: json['created_by'] is int
+          ? json['created_by']
+          : int.tryParse(json['created_by']?.toString() ?? ''),
       socials: (json['socials'] as List? ?? []).map((e) {
         if (e is Map) {
           return CompanySocialModel.fromJson(Map<String, dynamic>.from(e));

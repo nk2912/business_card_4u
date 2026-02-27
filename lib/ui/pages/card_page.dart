@@ -8,6 +8,8 @@ import '../components/loading_view.dart';
 import '../components/card_item.dart';
 import 'add_card_page.dart';
 import 'company_select_page.dart';
+import 'scan_page.dart';
+import 'card_detail_page.dart'; // Added import
 
 class CardPage extends StatefulWidget {
   const CardPage({super.key});
@@ -184,28 +186,131 @@ class _CardPageState extends State<CardPage>
     final provider = context.watch<CardProvider>();
     final auth = context.watch<AuthProvider>();
     final currentUser = auth.currentUser;
+    BusinessCardModel? myProfileCard;
+    try {
+      myProfileCard = provider.cards.firstWhere((c) {
+        if (currentUser == null) return false;
+        if (c.cardType != 'my_card') return false;
 
-    // 1. My Cards: Created by me
-    final myCards = provider.cards.where((c) {
-      if (currentUser != null && c.user != null) {
-        return c.user!.id == currentUser.id;
-      }
-      return c.cardType == 'my_card';
+        // STRICT MATCH: The card's email must match the user's login email
+        return c.emails.contains(currentUser.email);
+      });
+    } catch (e) {
+      myProfileCard = null;
+    }
+
+    // 2. My Saved Cards -> 'my_card' (Manual entries)
+    // EXCLUDE the profile card found above.
+    final mySavedCards = provider.cards.where((c) {
+      // Must be 'my_card'
+      if (c.cardType != 'my_card') return false;
+
+      // Exclude if it is the profile card (by ID)
+      if (myProfileCard != null && c.id == myProfileCard.id) return false;
+
+      return true;
     }).toList();
 
-    // 2. User Cards: Collected from others
-    final userCards = provider.cards.where((c) {
-      if (currentUser != null && c.user != null) {
-        return c.user!.id != currentUser.id;
-      }
-      return c.cardType == 'user_card'; // fallback
+    // 3. My Friend's Cards (Other users) -> 'user_card'
+    final myFriendsCards = provider.cards.where((c) {
+      return c.cardType == 'user_card';
     }).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFD),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF1E3C72), Color(0xFF2A5298)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              accountName: Text(
+                currentUser?.name ?? "User",
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              accountEmail: Text(currentUser?.email ?? ""),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.white,
+                backgroundImage: (myProfileCard?.profileImage != null &&
+                        myProfileCard!.profileImage!.isNotEmpty)
+                    ? NetworkImage(myProfileCard.profileImage!)
+                    : null,
+                child: (myProfileCard?.profileImage == null ||
+                        myProfileCard!.profileImage!.isEmpty)
+                    ? Text(
+                        (currentUser?.name ?? "U")
+                            .substring(0, 1)
+                            .toUpperCase(),
+                        style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E3C72)),
+                      )
+                    : null,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.person, color: Color(0xFF1E3C72)),
+              title: const Text('My Profile Card'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+
+                if (myProfileCard != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CardDetailPage(card: myProfileCard!),
+                    ),
+                  );
+                } else {
+                  // If no card, prompt to create
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AddCardPage()),
+                  ).then((_) => context.read<CardProvider>().fetchCards());
+                }
+              },
+            ),
+            ListTile(
+              leading:
+                  const Icon(Icons.business_rounded, color: Color(0xFF1E3C72)),
+              title: const Text('Manage Companies'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const CompanySelectPage(isSelectionMode: false),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              title: const Text('Logout',
+                  style: TextStyle(color: Colors.redAccent)),
+              onTap: () {
+                Navigator.pop(context);
+                context.read<AuthProvider>().logout();
+              },
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        iconTheme:
+            const IconThemeData(color: Colors.black87), // Hamburger color
         title: RichText(
           text: const TextSpan(
             text: "businessCard",
@@ -231,27 +336,12 @@ class _CardPageState extends State<CardPage>
           unselectedLabelColor: Colors.grey,
           indicatorColor: const Color(0xFF2563EB),
           tabs: const [
-            Tab(text: "My Saved Card"),
-            Tab(text: "User Card"),
+            Tab(text: "My Friend's Cards"), // user_card
+            Tab(text: "My Saved Cards"), // my_card
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.business_rounded, color: Color(0xFF2563EB)),
-            tooltip: "Manage Companies",
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CompanySelectPage()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.black87),
-            onPressed: () {
-              context.read<AuthProvider>().logout();
-            },
-          ),
+          // Moved actions to Drawer, keeping AppBar clean
         ],
       ),
       body: Column(
@@ -292,15 +382,20 @@ class _CardPageState extends State<CardPage>
           const SizedBox(height: 8),
 
           /// ================= COMPANY FILTER =================
-          if (_tabController?.index == 0) _buildCompanyFilter(myCards),
+          if (_tabController?.index == 0)
+            _buildCompanyFilter(myFriendsCards), // Filter friends by company
+          if (_tabController?.index == 1)
+            _buildCompanyFilter(mySavedCards), // Filter saved cards by company
 
           /// ================= TABS VIEW =================
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildCardList(myCards, provider.isLoading),
-                _buildCardList(userCards, provider.isLoading),
+                _buildCardList(myFriendsCards,
+                    provider.isLoading), // Tab 1: My Friend's Cards (user_card)
+                _buildCardList(mySavedCards,
+                    provider.isLoading), // Tab 2: My Saved Cards (my_card)
               ],
             ),
           ),
@@ -311,8 +406,13 @@ class _CardPageState extends State<CardPage>
         backgroundColor: const Color(0xFF2563EB),
         elevation: 6,
         onPressed: () {
+          // Both tabs allow adding something
+          // Tab 1 (Friends): Scan QR to add friend
+          // Tab 2 (Saved): Add manual card
           if (_tabController?.index == 0) {
-            // My Card Tab -> Add Card
+            _showAddOptions(context); // Scan or Manual
+          } else {
+            // Directly add manual card
             Navigator.of(context)
                 .push(MaterialPageRoute(builder: (_) => const AddCardPage()))
                 .then((created) {
@@ -320,16 +420,32 @@ class _CardPageState extends State<CardPage>
                 context.read<CardProvider>().fetchCards();
               }
             });
-          } else {
-            // User Card Tab -> Scan QR
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("QR Scanner coming soon!")),
-            );
           }
         },
-        child: Icon((_tabController?.index ?? 0) == 0
-            ? Icons.add
-            : Icons.qr_code_scanner),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _showAddOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.qr_code_scanner),
+            title: const Text('Scan QR Code'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ScanPage()),
+              );
+            },
+          ),
+          // For Friend's card, maybe searching by email/ID is also an option later
+        ],
       ),
     );
   }

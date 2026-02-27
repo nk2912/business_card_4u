@@ -86,14 +86,16 @@ class CompanyProvider extends ChangeNotifier {
   Future<bool> deleteCompany(int id) async {
     try {
       errorMessage = null;
+      notifyListeners();
       await _api.deleteCompany(id);
       companies.removeWhere((c) => c.id == id);
-      notifyListeners();
       return true;
     } catch (e) {
       errorMessage = _extractErrorMessage(e);
       debugPrint('COMPANY DELETE ERROR: $e');
       return false;
+    } finally {
+      notifyListeners();
     }
   }
 }

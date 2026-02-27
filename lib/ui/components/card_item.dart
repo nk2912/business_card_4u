@@ -54,18 +54,28 @@ class CardItem extends StatelessWidget {
                 Row(
                   children: [
                     Hero(
-                      tag: 'avatar_${card.id}_${card.fullName}', // More unique tag
+                      tag:
+                          'avatar_${card.id}_${card.fullName}', // More unique tag
                       child: CircleAvatar(
                         radius: 26,
                         backgroundColor: Colors.white.withOpacity(.15),
-                        child: Text(
-                          card.fullName.isNotEmpty ? card.fullName[0].toUpperCase() : "",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        backgroundImage: (card.profileImage != null &&
+                                card.profileImage!.isNotEmpty)
+                            ? NetworkImage(card.profileImage!)
+                            : null,
+                        child: (card.profileImage == null ||
+                                card.profileImage!.isEmpty)
+                            ? Text(
+                                card.fullName.isNotEmpty
+                                    ? card.fullName[0].toUpperCase()
+                                    : "",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                            : null,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -97,7 +107,9 @@ class CardItem extends StatelessWidget {
                         icon: const Icon(Icons.person_add, color: Colors.white),
                         tooltip: "Add Friend",
                         onPressed: () async {
-                          final success = await context.read<CardProvider>().addFriend(card.id);
+                          final success = await context
+                              .read<CardProvider>()
+                              .addFriend(card.id);
                           if (success && context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -129,6 +141,9 @@ class CardItem extends StatelessWidget {
                     text: card.company!.name,
                   ),
 
+                // Show raw company name if no company object but has company string?
+                // (Not in current model, assuming company object handles it)
+
                 /// ================= PHONE =================
                 if (card.phones.isNotEmpty)
                   _contactRow(
@@ -150,13 +165,41 @@ class CardItem extends StatelessWidget {
     );
   }
 
+  Widget _infoRow({
+    required IconData icon,
+    required String text,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white70, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+                fontSize: 15,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _contactRow({
     required IconData icon,
-    required List<String> items,
+    required List<String>
+        items, // Changed parameter name to items for clarity but using items internally
   }) {
     if (items.isEmpty) return const SizedBox.shrink();
     final primary = items.first;
-    final remaining = items.length - 1;
+    // final remaining = items.length - 1; // Unused for now
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -174,50 +217,8 @@ class CardItem extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          if (remaining > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 4,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(.15),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                "+$remaining",
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoRow({
-    required IconData icon,
-    required String text,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white70, size: 17),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          // Removed the "+remaining" badge as per potential design cleanup or user preference inferred
+          // if (remaining > 0) ...
         ],
       ),
     );

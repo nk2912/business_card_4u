@@ -35,6 +35,47 @@ class CardDetailPage extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          // QR Code for My Card
+          if (isMyCard)
+            IconButton(
+              icon: const Icon(Icons.qr_code, color: Colors.white),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "My QR Code",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                        const SizedBox(height: 16),
+                        // Fallback simple display if qr_flutter not used
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          color: Colors.white,
+                          child: const Icon(Icons.qr_code_2,
+                              size: 150, color: Colors.black),
+                        ),
+                        const SizedBox(height: 16),
+                        Text("ID: ${card.id}",
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                        const Text("Scan to add me",
+                            style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+
+          // Edit/Delete Menu for My Card
           if (isMyCard) ...[
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Colors.white),
@@ -107,7 +148,8 @@ class CardDetailPage extends StatelessWidget {
             // Not my card actions
             if (isFriend)
               IconButton(
-                icon: const Icon(Icons.person_remove, color: Colors.redAccent),
+                icon: const Icon(Icons.person_remove,
+                    color: Colors.white), // Fixed color for better contrast
                 tooltip: "Remove Friend",
                 onPressed: () async {
                   final confirm = await showDialog<bool>(
@@ -206,6 +248,8 @@ class CardDetailPage extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(bottom: 30),
+      // decoration removed to keep transparent as appBar has the gradient background
+      // or we can keep it if we want the curve effect below the appbar
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -224,10 +268,10 @@ class CardDetailPage extends StatelessWidget {
             child: CircleAvatar(
               radius: 50,
               backgroundColor: Colors.white.withOpacity(0.2),
-              backgroundImage: card.profileImage != null
+              backgroundImage: (card.profileImage != null && card.profileImage!.isNotEmpty)
                   ? NetworkImage(card.profileImage!)
                   : null,
-              child: card.profileImage == null
+              child: (card.profileImage == null || card.profileImage!.isEmpty)
                   ? Text(
                       card.fullName.isNotEmpty
                           ? card.fullName[0].toUpperCase()

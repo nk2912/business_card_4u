@@ -51,9 +51,7 @@ class BusinessCardModel {
       company: json['company'] != null
           ? CompanyModel.fromJson(json['company'])
           : null,
-      user: json['user'] != null
-          ? UserModel.fromJson(json['user'])
-          : null,
+      user: json['user'] != null ? UserModel.fromJson(json['user']) : null,
       cardType: json['card_type'] ?? 'my_card',
       qrCodeData: json['qr_code_data'],
       socialLinks: json['social_links'] != null
@@ -62,6 +60,17 @@ class BusinessCardModel {
       isFriend: json['is_friend'] ?? false,
       friendStatus: json['friend_status'] ?? 'none',
       tag: json['tag'],
+    );
+  }
+
+  factory BusinessCardModel.empty() {
+    return BusinessCardModel(
+      id: 0,
+      fullName: '',
+      position: '',
+      phones: [],
+      emails: [],
+      addresses: [],
     );
   }
 }

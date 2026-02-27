@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../bloc/card/card_provider.dart';
 import '../../data/models/business_card_model.dart';
@@ -27,6 +29,7 @@ class _AddCardPageState extends State<AddCardPage> {
   final _profileImageCtrl = TextEditingController();
   int? _selectedCompanyId;
   String? _selectedCompanyName;
+  File? _pickedImage; // New
 
   bool get isEditing => widget.card != null;
 
@@ -46,6 +49,25 @@ class _AddCardPageState extends State<AddCardPage> {
         _selectedCompanyId = c.company!.id;
         _selectedCompanyName = c.company!.name;
       }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    debugPrint("Picking image...");
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+      if (pickedFile != null) {
+        debugPrint("Image picked: ${pickedFile.path}");
+        setState(() {
+          _pickedImage = File(pickedFile.path);
+        });
+      } else {
+        debugPrint("No image picked");
+      }
+    } catch (e) {
+      debugPrint("Error picking image: $e");
     }
   }
 
@@ -125,6 +147,7 @@ class _AddCardPageState extends State<AddCardPage> {
         addresses: addresses.isEmpty ? null : addresses,
         bio: bio.isEmpty ? null : bio,
         profileImage: profileImage.isEmpty ? null : profileImage,
+        imageFile: _pickedImage, // Pass image file
       );
     } else {
       ok = await provider.createCard(
@@ -136,6 +159,7 @@ class _AddCardPageState extends State<AddCardPage> {
         addresses: addresses.isEmpty ? null : addresses,
         bio: bio.isEmpty ? null : bio,
         profileImage: profileImage.isEmpty ? null : profileImage,
+        imageFile: _pickedImage, // Pass image file
       );
     }
 
@@ -169,7 +193,8 @@ class _AddCardPageState extends State<AddCardPage> {
       backgroundColor: const Color(0xFFF8FAFD),
       appBar: AppBar(
         title: Text(isEditing ? 'Edit Business Card' : 'Add Business Card',
-            style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
+            style: const TextStyle(
+                color: Colors.black87, fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
@@ -185,6 +210,65 @@ class _AddCardPageState extends State<AddCardPage> {
                 children: [
                   _buildSectionTitle("Personal Info"),
                   const SizedBox(height: 16),
+
+                  // Profile Image Picker
+                  Center(
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.grey[200],
+                              border: Border.all(
+                                  color: Colors.grey[300]!, width: 2),
+                              image: _pickedImage != null
+                                  ? DecorationImage(
+                                      image: FileImage(_pickedImage!),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : (_profileImageCtrl.text.isNotEmpty &&
+                                          Uri.tryParse(_profileImageCtrl.text)
+                                                  ?.isAbsolute ==
+                                              true
+                                      ? DecorationImage(
+                                          image: NetworkImage(
+                                              _profileImageCtrl.text),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : null),
+                            ),
+                            child: (_pickedImage == null &&
+                                    (_profileImageCtrl.text.isEmpty ||
+                                        Uri.tryParse(_profileImageCtrl.text)
+                                                ?.isAbsolute !=
+                                            true))
+                                ? const Icon(Icons.person,
+                                    size: 50, color: Colors.grey)
+                                : null,
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF2563EB),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.edit,
+                                  size: 16, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
                   _buildPremiumTextField(
                     controller: _nameCtrl,
                     label: "Full Name",
@@ -199,12 +283,10 @@ class _AddCardPageState extends State<AddCardPage> {
                     icon: Icons.work_outline,
                   ),
                   const SizedBox(height: 24),
-
                   _buildSectionTitle("Company"),
                   const SizedBox(height: 16),
                   _buildCompanySelector(),
                   const SizedBox(height: 24),
-
                   _buildSectionTitle("Contact Details"),
                   const SizedBox(height: 16),
                   _buildPremiumTextField(
@@ -230,7 +312,6 @@ class _AddCardPageState extends State<AddCardPage> {
                     icon: Icons.location_on_outlined,
                   ),
                   const SizedBox(height: 24),
-
                   _buildSectionTitle("More"),
                   const SizedBox(height: 16),
                   _buildPremiumTextField(
@@ -240,15 +321,14 @@ class _AddCardPageState extends State<AddCardPage> {
                     icon: Icons.info_outline,
                     maxLines: 3,
                   ),
-                  const SizedBox(height: 16),
-                  _buildPremiumTextField(
-                    controller: _profileImageCtrl,
-                    label: "Profile Image URL",
-                    hint: "https://...",
-                    icon: Icons.image_outlined,
-                  ),
+                  // const SizedBox(height: 16),
+                  // _buildPremiumTextField(
+                  //   controller: _profileImageCtrl,
+                  //   label: "Profile Image URL",
+                  //   hint: "https://...",
+                  //   icon: Icons.image_outlined,
+                  // ),
                   const SizedBox(height: 32),
-
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -334,7 +414,8 @@ class _AddCardPageState extends State<AddCardPage> {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );

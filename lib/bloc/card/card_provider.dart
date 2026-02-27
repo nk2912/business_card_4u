@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../core/network/dio_client.dart';
 import '../../data/models/business_card_model.dart';
@@ -35,6 +36,7 @@ class CardProvider extends ChangeNotifier {
     List<String>? addresses,
     String? bio,
     String? profileImage,
+    File? imageFile,
   }) async {
     try {
       isCreating = true;
@@ -51,7 +53,7 @@ class CardProvider extends ChangeNotifier {
         profileImage: profileImage,
       );
 
-      final created = await _api.createCard(request.toJson());
+      final created = await _api.createCard(request.toJson(), imageFile: imageFile);
       cards = [created, ...cards];
       return true;
     } catch (e) {
@@ -72,6 +74,7 @@ class CardProvider extends ChangeNotifier {
     List<String>? addresses,
     String? bio,
     String? profileImage,
+    File? imageFile,
   }) async {
     try {
       isCreating = true;
@@ -88,7 +91,7 @@ class CardProvider extends ChangeNotifier {
         profileImage: profileImage,
       );
 
-      final updated = await _api.updateCard(id, request.toJson());
+      final updated = await _api.updateCard(id, request.toJson(), imageFile: imageFile);
       final index = cards.indexWhere((c) => c.id == id);
       if (index != -1) {
         cards[index] = updated;
