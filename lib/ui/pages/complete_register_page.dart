@@ -203,9 +203,7 @@ class _CompleteRegisterPageState
                                     .trim(),
                               );
 
-                              if (!mounted) {
-                                return;
-                              }
+                              if (!context.mounted) return;
 
                               if (success) {
                                 _showMessage(

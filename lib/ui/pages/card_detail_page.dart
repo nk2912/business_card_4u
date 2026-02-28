@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../bloc/card/card_provider.dart';
+import '../../core/network/image_url.dart';
 import '../../data/models/business_card_model.dart';
 import 'add_card_page.dart';
 // import 'company_detail_page.dart';
@@ -87,6 +88,7 @@ class CardDetailPage extends StatelessWidget {
                       builder: (_) => AddCardPage(card: card),
                     ),
                   ).then((updated) {
+                    if (!context.mounted) return;
                     if (updated == true) {
                       context.read<CardProvider>().fetchCards();
                       Navigator.pop(context);
@@ -113,10 +115,25 @@ class CardDetailPage extends StatelessWidget {
                     ),
                   );
                   if (confirm == true && context.mounted) {
-                    final success =
-                        await context.read<CardProvider>().deleteCard(card.id);
-                    if (success && context.mounted) {
+                    final provider = context.read<CardProvider>();
+                    final success = await provider.deleteCard(card.id);
+                    if (!context.mounted) return;
+                    
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(provider.deleteMessage ?? "Card deleted successfully"),
+                          backgroundColor: Colors.redAccent.shade100, // Pale red
+                        ),
+                      );
                       Navigator.pop(context);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                         SnackBar(
+                          content: Text(provider.deleteMessage ?? "Failed to delete card"),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
                     }
                   }
                 }
@@ -268,9 +285,10 @@ class CardDetailPage extends StatelessWidget {
             child: CircleAvatar(
               radius: 50,
               backgroundColor: Colors.white.withOpacity(0.2),
-              backgroundImage: (card.profileImage != null && card.profileImage!.isNotEmpty)
-                  ? NetworkImage(card.profileImage!)
-                  : null,
+              backgroundImage:
+                  (card.profileImage != null && card.profileImage!.isNotEmpty)
+                      ? NetworkImage(ImageUrl.resolve(card.profileImage!)!)
+                      : null,
               child: (card.profileImage == null || card.profileImage!.isEmpty)
                   ? Text(
                       card.fullName.isNotEmpty

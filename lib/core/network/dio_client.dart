@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'api_constants.dart';
+import '../auth/auth_session.dart';
 import '../storage/token_storage.dart';
 
 class DioClient {
@@ -23,6 +24,14 @@ class DioClient {
             options.headers['Authorization'] = 'Bearer $token';
           }
           handler.next(options);
+        },
+        onError: (error, handler) async {
+          final statusCode = error.response?.statusCode;
+          if (statusCode == 401) {
+            await TokenStorage.clear();
+            AuthSession.notifyUnauthorized();
+          }
+          handler.next(error);
         },
       ),
     );

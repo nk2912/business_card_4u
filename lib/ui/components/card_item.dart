@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/network/image_url.dart';
 import '../../bloc/card/card_provider.dart';
 import '../../data/models/business_card_model.dart';
 import '../pages/card_detail_page.dart';
@@ -61,7 +62,8 @@ class CardItem extends StatelessWidget {
                         backgroundColor: Colors.white.withOpacity(.15),
                         backgroundImage: (card.profileImage != null &&
                                 card.profileImage!.isNotEmpty)
-                            ? NetworkImage(card.profileImage!)
+                            ? NetworkImage(
+                                ImageUrl.resolve(card.profileImage!)!)
                             : null,
                         child: (card.profileImage == null ||
                                 card.profileImage!.isEmpty)

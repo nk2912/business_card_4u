@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../core/auth/auth_session.dart';
 import '../../core/network/dio_client.dart';
 import '../../data/network/data_agents/auth_api_impl.dart';
 import '../../data/vos/request/login_request.dart';
@@ -8,10 +9,21 @@ import '../../data/models/user_model.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool isLoading = false;
+  bool isCheckingSession = false;
   bool isLoggedIn = false;
   UserModel? currentUser;
 
   final _api = AuthApiImpl(DioClient.create());
+  late final VoidCallback _unauthorizedListener;
+
+  AuthProvider() {
+    _unauthorizedListener = () {
+      if (isLoggedIn || currentUser != null) {
+        logout();
+      }
+    };
+    AuthSession.unauthorizedTick.addListener(_unauthorizedListener);
+  }
 
   /// ================= LOGIN =================
   Future<bool> login(String email, String password) async {
@@ -101,20 +113,28 @@ class AuthProvider extends ChangeNotifier {
 
   /// ================= CHECK LOGIN =================
   Future<void> checkLogin() async {
-    final token = await TokenStorage.read();
-    if (token != null) {
-      isLoggedIn = true;
-      notifyListeners();
-      try {
-        final userMap = await _api.getProfile();
-        currentUser = UserModel.fromJson(userMap);
-      } catch (e) {
-        debugPrint("Failed to fetch profile: $e");
-      }
-    } else {
-      isLoggedIn = false;
-    }
+    isCheckingSession = true;
     notifyListeners();
+
+    try {
+      final token = await TokenStorage.read();
+      if (token == null) {
+        isLoggedIn = false;
+        currentUser = null;
+        return;
+      }
+
+      final userMap = await _api.getProfile();
+      currentUser = UserModel.fromJson(userMap);
+      isLoggedIn = true;
+    } catch (e) {
+      await TokenStorage.clear();
+      isLoggedIn = false;
+      currentUser = null;
+    } finally {
+      isCheckingSession = false;
+      notifyListeners();
+    }
   }
 
   /// ================= LOGOUT =================
@@ -128,5 +148,11 @@ class AuthProvider extends ChangeNotifier {
   void cancelLoading() {
     isLoading = false;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    AuthSession.unauthorizedTick.removeListener(_unauthorizedListener);
+    super.dispose();
   }
 }

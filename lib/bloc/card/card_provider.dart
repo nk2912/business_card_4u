@@ -53,7 +53,8 @@ class CardProvider extends ChangeNotifier {
         profileImage: profileImage,
       );
 
-      final created = await _api.createCard(request.toJson(), imageFile: imageFile);
+      final created =
+          await _api.createCard(request.toJson(), imageFile: imageFile);
       cards = [created, ...cards];
       return true;
     } catch (e) {
@@ -65,7 +66,8 @@ class CardProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateCard(int id, {
+  Future<bool> updateCard(
+    int id, {
     String? name,
     int? companyId,
     String? position,
@@ -91,7 +93,8 @@ class CardProvider extends ChangeNotifier {
         profileImage: profileImage,
       );
 
-      final updated = await _api.updateCard(id, request.toJson(), imageFile: imageFile);
+      final updated =
+          await _api.updateCard(id, request.toJson(), imageFile: imageFile);
       final index = cards.indexWhere((c) => c.id == id);
       if (index != -1) {
         cards[index] = updated;
@@ -106,14 +109,17 @@ class CardProvider extends ChangeNotifier {
     }
   }
 
+  String? deleteMessage;
+
   Future<bool> deleteCard(int id) async {
     try {
-      await _api.deleteCard(id);
+      deleteMessage = await _api.deleteCard(id);
       cards.removeWhere((c) => c.id == id);
       notifyListeners();
       return true;
     } catch (e) {
       debugPrint("DELETE CARD ERROR: $e");
+      deleteMessage = "Failed to delete card";
       return false;
     }
   }

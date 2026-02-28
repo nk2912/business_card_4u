@@ -117,9 +117,10 @@ class CardApiImpl implements CardApi {
   }
 
   @override
-  Future<void> deleteCard(int id) async {
+  Future<String> deleteCard(int id) async {
     try {
-      await dio.delete('${ApiConstants.cards}/$id');
+      final res = await dio.delete('${ApiConstants.cards}/$id');
+      return res.data['message'] ?? 'Business card deleted successfully';
     } on DioException catch (e) {
       throw Exception(
         e.response?.data['message'] ?? 'Failed to delete card',

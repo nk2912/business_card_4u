@@ -170,7 +170,9 @@ class _AddCardPageState extends State<AddCardPage> {
           content: Text(isEditing
               ? 'Business card updated successfully'
               : 'Business card created successfully'),
-          backgroundColor: Colors.green,
+          backgroundColor: isEditing
+              ? Colors.blue
+              : Colors.green, // Update: Blue, Create: Green
         ),
       );
       Navigator.of(context).pop(true);

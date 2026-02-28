@@ -93,6 +93,7 @@ class _OtpPageState extends State<OtpPage> {
     if (isSuccess) {
       Future.delayed(const Duration(milliseconds: 500),
               () {
+            if (!mounted) return;
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(

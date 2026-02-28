@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../bloc/auth/auth_provider.dart';
 import '../../bloc/card/card_provider.dart';
+import '../../core/network/image_url.dart';
 import '../../data/models/business_card_model.dart';
 import '../components/loading_view.dart';
 import '../components/card_item.dart';
@@ -31,6 +32,7 @@ class _CardPageState extends State<CardPage>
     _initTabController();
 
     Future.microtask(() {
+      if (!mounted) return;
       context.read<CardProvider>().fetchCards();
       // Ensure user profile is loaded if not already
       final auth = context.read<AuthProvider>();
@@ -208,6 +210,13 @@ class _CardPageState extends State<CardPage>
       // Exclude if it is the profile card (by ID)
       if (myProfileCard != null && c.id == myProfileCard.id) return false;
 
+      // Ensure we only show cards created by the current user
+      if (currentUser != null &&
+          c.user != null &&
+          c.user!.id != currentUser.id) {
+        return false;
+      }
+
       return true;
     }).toList();
 
@@ -240,7 +249,9 @@ class _CardPageState extends State<CardPage>
                 backgroundColor: Colors.white,
                 backgroundImage: (myProfileCard?.profileImage != null &&
                         myProfileCard!.profileImage!.isNotEmpty)
-                    ? NetworkImage(myProfileCard.profileImage!)
+                    ? NetworkImage(
+                        ImageUrl.resolve(myProfileCard.profileImage!)!,
+                      )
                     : null,
                 child: (myProfileCard?.profileImage == null ||
                         myProfileCard!.profileImage!.isEmpty)
@@ -274,7 +285,10 @@ class _CardPageState extends State<CardPage>
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const AddCardPage()),
-                  ).then((_) => context.read<CardProvider>().fetchCards());
+                  ).then((_) {
+                    if (!context.mounted) return;
+                    context.read<CardProvider>().fetchCards();
+                  });
                 }
               },
             ),
@@ -417,6 +431,7 @@ class _CardPageState extends State<CardPage>
                 .push(MaterialPageRoute(builder: (_) => const AddCardPage()))
                 .then((created) {
               if (created == true) {
+                if (!context.mounted) return;
                 context.read<CardProvider>().fetchCards();
               }
             });

@@ -130,7 +130,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       _emailController.text.trim(),
                     );
 
-                    if (!mounted) return;
+                    if (!context.mounted) return;
 
                     final isSuccess =
                         message != null &&

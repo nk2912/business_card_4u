@@ -25,6 +25,7 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       context.read<CompanyProvider>().fetchCompanies();
     });
   }
@@ -81,6 +82,7 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
         ],
       ),
     );
+    if (!mounted) return;
     if (ok != true) return;
     final provider = context.read<CompanyProvider>();
     final success = await provider.deleteCompany(company.id);
@@ -89,9 +91,9 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Company deleted successfully'),
-          backgroundColor: Colors.orange,
+          backgroundColor: Colors.redAccent.shade100, // Pale red
           behavior: SnackBarBehavior.floating,
         ),
       );

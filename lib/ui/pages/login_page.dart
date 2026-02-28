@@ -35,13 +35,11 @@ class _LoginPageState extends State<LoginPage> {
       resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
-
           /// ================= MAIN CONTENT =================
           SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-
                 /// ================= HERO SECTION =================
                 SizedBox(
                   height: 200,
@@ -51,9 +49,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-
                         const SizedBox(height: 40),
-
                         RichText(
                           text: TextSpan(
                             text: 'businessCard',
@@ -96,15 +92,12 @@ class _LoginPageState extends State<LoginPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Column(
                     children: [
-
                       _inputField(
                         controller: _emailController,
                         label: 'Email',
                         icon: Icons.email_outlined,
                       ),
-
                       const SizedBox(height: 18),
-
                       _inputField(
                         controller: _passwordController,
                         label: 'Password',
@@ -123,9 +116,7 @@ class _LoginPageState extends State<LoginPage> {
                           },
                         ),
                       ),
-
                       const SizedBox(height: 28),
-
                       SizedBox(
                         width: double.infinity,
                         height: 52,
@@ -141,23 +132,21 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: auth.isLoading
                               ? null
                               : () async {
-                            final success = await context
-                                .read<AuthProvider>()
-                                .login(
-                              _emailController.text.trim(),
-                              _passwordController.text.trim(),
-                            );
+                                  final success =
+                                      await context.read<AuthProvider>().login(
+                                            _emailController.text.trim(),
+                                            _passwordController.text.trim(),
+                                          );
 
-                            if (!success && mounted) {
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Invalid email or password'),
-                                ),
-                              );
-                            }
-                          },
+                                  if (!success && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content:
+                                            Text('Invalid email or password'),
+                                      ),
+                                    );
+                                  }
+                                },
                           child: const Text(
                             'Log In',
                             style: TextStyle(
@@ -168,7 +157,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
                       TextButton(
                         onPressed: () {
                           Navigator.push(
@@ -180,14 +168,11 @@ class _LoginPageState extends State<LoginPage> {
                         },
                         child: const Text("Don't have an account? Register"),
                       ),
-
                       const SizedBox(height: 30),
-
                       Text(
                         'Developed by Asia Brightway',
                         style: theme.textTheme.bodySmall,
                       ),
-
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -246,8 +231,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide:
-          const BorderSide(color: Colors.blue, width: 1.5),
+          borderSide: const BorderSide(color: Colors.blue, width: 1.5),
         ),
       ),
     );
