@@ -17,6 +17,7 @@ class BusinessCardModel {
   final List<dynamic>? socialLinks;
   final bool isFriend;
   final String friendStatus;
+  final String? friendRequestStatus; // Added field
   final String? tag;
 
   BusinessCardModel({
@@ -30,11 +31,12 @@ class BusinessCardModel {
     this.profileImage,
     this.company,
     this.user,
-    this.cardType = 'my_card',
+    this.cardType = 'user_card', // Default is user_card (profile)
     this.qrCodeData,
     this.socialLinks,
     this.isFriend = false,
     this.friendStatus = 'none',
+    this.friendRequestStatus = 'none', // Added default
     this.tag,
   });
 
@@ -52,13 +54,15 @@ class BusinessCardModel {
           ? CompanyModel.fromJson(json['company'])
           : null,
       user: json['user'] != null ? UserModel.fromJson(json['user']) : null,
-      cardType: json['card_type'] ?? 'my_card',
+      cardType: json['card_type'] ?? 'user_card',
       qrCodeData: json['qr_code_data'],
       socialLinks: json['social_links'] != null
           ? List<dynamic>.from(json['social_links'])
           : null,
       isFriend: json['is_friend'] ?? false,
       friendStatus: json['friend_status'] ?? 'none',
+      friendRequestStatus:
+          json['friend_request_status'] ?? 'none', // Added mapping
       tag: json['tag'],
     );
   }

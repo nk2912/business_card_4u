@@ -9,8 +9,10 @@ import '../components/loading_view.dart';
 import '../components/card_item.dart';
 import 'add_card_page.dart';
 import 'company_select_page.dart';
-import 'scan_page.dart';
+import 'scan_page.dart'; // Added import
+import 'search_page.dart'; // Added import
 import 'card_detail_page.dart'; // Added import
+import 'friend_requests_page.dart';
 
 class CardPage extends StatefulWidget {
   const CardPage({super.key});
@@ -34,6 +36,7 @@ class _CardPageState extends State<CardPage>
     Future.microtask(() {
       if (!mounted) return;
       context.read<CardProvider>().fetchCards();
+      context.read<CardProvider>().fetchFriendRequests();
       // Ensure user profile is loaded if not already
       final auth = context.read<AuthProvider>();
       if (auth.currentUser == null) {
@@ -179,6 +182,49 @@ class _CardPageState extends State<CardPage>
     );
   }
 
+  void _showAddOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading:
+                    const Icon(Icons.qr_code_scanner, color: Color(0xFF2563EB)),
+                title: const Text('Scan QR Code'),
+                subtitle: const Text('Add friend by scanning their QR code'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ScanPage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.search, color: Color(0xFF2563EB)),
+                title: const Text('Search Users'),
+                subtitle: const Text('Find users by name or company'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SearchPage()),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_tabController == null) {
@@ -192,7 +238,8 @@ class _CardPageState extends State<CardPage>
     try {
       myProfileCard = provider.cards.firstWhere((c) {
         if (currentUser == null) return false;
-        if (c.cardType != 'my_card') return false;
+        if (c.cardType != 'user_card')
+          return false; // Profile is now 'user_card'
 
         // STRICT MATCH: The card's email must match the user's login email
         return c.emails.contains(currentUser.email);
@@ -201,28 +248,20 @@ class _CardPageState extends State<CardPage>
       myProfileCard = null;
     }
 
-    // 2. My Saved Cards -> 'my_card' (Manual entries)
-    // EXCLUDE the profile card found above.
+    // 2. My Saved Cards -> Manual entries created by me ('saved_card')
     final mySavedCards = provider.cards.where((c) {
-      // Must be 'my_card'
-      if (c.cardType != 'my_card') return false;
-
-      // Exclude if it is the profile card (by ID)
-      if (myProfileCard != null && c.id == myProfileCard.id) return false;
-
-      // Ensure we only show cards created by the current user
-      if (currentUser != null &&
-          c.user != null &&
-          c.user!.id != currentUser.id) {
-        return false;
-      }
-
+      if (c.cardType != 'saved_card') return false;
+      if (currentUser != null && c.user?.id != currentUser.id)
+        return false; // Must be mine
       return true;
     }).toList();
 
-    // 3. My Friend's Cards (Other users) -> 'user_card'
+    // 3. My Friend's Cards -> Cards from others that I have collected/friended
+    // These are typically 'user_card' created by others, but linked to me
     final myFriendsCards = provider.cards.where((c) {
-      return c.cardType == 'user_card';
+      if (!c.isFriend) return false;
+      if (currentUser != null && c.user?.id == currentUser.id) return false;
+      return true;
     }).toList();
 
     return Scaffold(
@@ -355,7 +394,53 @@ class _CardPageState extends State<CardPage>
           ],
         ),
         actions: [
-          // Moved actions to Drawer, keeping AppBar clean
+          Consumer<CardProvider>(
+            builder: (context, provider, _) {
+              final count = provider.friendRequests.length;
+              return IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const FriendRequestsPage(),
+                    ),
+                  ).then((_) {
+                    if (!context.mounted) return;
+                    context.read<CardProvider>().fetchFriendRequests();
+                    context.read<CardProvider>().fetchCards();
+                  });
+                },
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.notifications_none, color: Colors.black87),
+                    if (count > 0)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          constraints: const BoxConstraints(minWidth: 18),
+                          child: Text(
+                            count > 99 ? '99+' : '$count',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
         ],
       ),
       body: Column(
@@ -378,17 +463,16 @@ class _CardPageState extends State<CardPage>
                 ],
               ),
               child: TextField(
-                controller: _searchController,
+                readOnly: true, // Make it read-only to act as a button
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const SearchPage()));
+                },
                 decoration: const InputDecoration(
                   icon: Icon(Icons.search, size: 20),
-                  hintText: "Search cards...",
+                  hintText: "Search users...",
                   border: InputBorder.none,
                 ),
-                onChanged: (value) {
-                  setState(() {
-                    _query = value;
-                  });
-                },
               ),
             ),
           ),
@@ -421,10 +505,10 @@ class _CardPageState extends State<CardPage>
         elevation: 6,
         onPressed: () {
           // Both tabs allow adding something
-          // Tab 1 (Friends): Scan QR to add friend
+          // Tab 1 (Friends): Scan QR or Search to add friend
           // Tab 2 (Saved): Add manual card
           if (_tabController?.index == 0) {
-            _showAddOptions(context); // Scan or Manual
+            _showAddOptions(context); // Scan or Search
           } else {
             // Directly add manual card
             Navigator.of(context)
@@ -438,29 +522,6 @@ class _CardPageState extends State<CardPage>
           }
         },
         child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  void _showAddOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.qr_code_scanner),
-            title: const Text('Scan QR Code'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ScanPage()),
-              );
-            },
-          ),
-          // For Friend's card, maybe searching by email/ID is also an option later
-        ],
       ),
     );
   }

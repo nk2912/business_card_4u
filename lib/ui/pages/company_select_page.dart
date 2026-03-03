@@ -93,7 +93,7 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Company deleted successfully'),
-          backgroundColor: Colors.redAccent.shade100, // Pale red
+          backgroundColor: Colors.red, // Pale red
           behavior: SnackBarBehavior.floating,
         ),
       );

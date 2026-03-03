@@ -7,6 +7,7 @@ class CreateCardRequest {
   final List<String>? addresses;
   final String? bio;
   final String? profileImage;
+  final String? cardType; // Added cardType
 
   CreateCardRequest({
     this.name,
@@ -17,6 +18,7 @@ class CreateCardRequest {
     this.addresses,
     this.bio,
     this.profileImage,
+    this.cardType,
   });
 
   Map<String, dynamic> toJson() {
@@ -32,6 +34,9 @@ class CreateCardRequest {
     if (bio != null && bio!.isNotEmpty) data['bio'] = bio;
     if (profileImage != null && profileImage!.isNotEmpty) {
       data['profile_image'] = profileImage;
+    }
+    if (cardType != null && cardType!.isNotEmpty) {
+      data['card_type'] = cardType;
     }
     return data;
   }

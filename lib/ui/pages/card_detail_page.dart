@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../bloc/card/card_provider.dart';
+import '../../bloc/auth/auth_provider.dart'; // Added import
 import '../../core/network/image_url.dart';
 import '../../data/models/business_card_model.dart';
 import 'add_card_page.dart';
@@ -13,9 +14,15 @@ class CardDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Check if I am the owner of this card
-    final isMyCard = card.cardType == 'my_card';
-    final isFriend = card.isFriend;
+    // Get current user to check ownership
+    final currentUser = context.read<AuthProvider>().currentUser;
+    final isMyCard = currentUser != null && card.user?.id == currentUser.id;
+
+    // Check if it's a "Saved Card" (Manual entry - owner is me)
+    final isSavedCard = card.cardType == 'saved_card';
+
+    // Check if it's a "User Card" (Other person's profile - I am viewing it)
+    final isUserCard = card.cardType == 'user_card';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFD),
@@ -36,48 +43,8 @@ class CardDetailPage extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          // QR Code for My Card
-          if (isMyCard)
-            IconButton(
-              icon: const Icon(Icons.qr_code, color: Colors.white),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          "My QR Code",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                        const SizedBox(height: 16),
-                        // Fallback simple display if qr_flutter not used
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          color: Colors.white,
-                          child: const Icon(Icons.qr_code_2,
-                              size: 150, color: Colors.black),
-                        ),
-                        const SizedBox(height: 16),
-                        Text("ID: ${card.id}",
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
-                        const Text("Scan to add me",
-                            style: TextStyle(color: Colors.grey)),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-
-          // Edit/Delete Menu for My Card
-          if (isMyCard) ...[
+          // Saved Card OR My Profile Card -> Show 3-dot Menu (Edit/Delete)
+          if (isSavedCard || isMyCard)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Colors.white),
               onSelected: (value) async {
@@ -118,19 +85,22 @@ class CardDetailPage extends StatelessWidget {
                     final provider = context.read<CardProvider>();
                     final success = await provider.deleteCard(card.id);
                     if (!context.mounted) return;
-                    
+
                     if (success) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(provider.deleteMessage ?? "Card deleted successfully"),
-                          backgroundColor: Colors.redAccent.shade100, // Pale red
+                          content: Text(provider.deleteMessage ??
+                              "Card deleted successfully"),
+                          backgroundColor:
+                              Colors.redAccent.shade100, // Pale red
                         ),
                       );
                       Navigator.pop(context);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                         SnackBar(
-                          content: Text(provider.deleteMessage ?? "Failed to delete card"),
+                        SnackBar(
+                          content: Text(provider.deleteMessage ??
+                              "Failed to delete card"),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -161,67 +131,74 @@ class CardDetailPage extends StatelessWidget {
                 ),
               ],
             ),
-          ] else ...[
-            // Not my card actions
-            if (isFriend)
-              IconButton(
-                icon: const Icon(Icons.person_remove,
-                    color: Colors.white), // Fixed color for better contrast
-                tooltip: "Remove Friend",
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text("Remove Friend"),
-                      content: const Text(
-                          "Are you sure you want to remove this friend?"),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text("Cancel"),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text("Remove",
-                              style: TextStyle(color: Colors.red)),
-                        ),
-                      ],
-                    ),
-                  );
 
-                  if (confirm == true && context.mounted) {
-                    final success = await context
-                        .read<CardProvider>()
-                        .removeFriend(card.id);
-                    if (success && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Friend removed successfully"),
-                            backgroundColor: Colors.orange),
+          // User Card (Friend's Card) -> Show Add/Remove Friend Icon
+          // Only show if it's NOT my card
+          if (isUserCard && !isMyCard)
+            Consumer<CardProvider>(
+              builder: (context, provider, _) {
+                // Check if it's already a friend
+                final isFriend = card.isFriend;
+
+                if (isFriend) {
+                  return IconButton(
+                    icon: const Icon(Icons.person_remove, color: Colors.white),
+                    tooltip: "Remove Friend",
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text("Remove Friend"),
+                          content: const Text(
+                              "Are you sure you want to remove this friend?"),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text("Cancel"),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: const Text("Remove",
+                                  style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        ),
                       );
-                      Navigator.pop(context);
-                    }
-                  }
-                },
-              )
-            else
-              IconButton(
-                icon: const Icon(Icons.person_add, color: Colors.white),
-                tooltip: "Add Friend",
-                onPressed: () async {
-                  final success =
-                      await context.read<CardProvider>().addFriend(card.id);
-                  if (success && context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("Friend added successfully"),
-                          backgroundColor: Colors.green),
-                    );
-                    // Optional: refresh or update state
-                  }
-                },
-              ),
-          ],
+
+                      if (confirm == true && context.mounted) {
+                        final success = await context
+                            .read<CardProvider>()
+                            .removeFriend(card.id);
+                        if (success && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text("Friend removed successfully"),
+                                backgroundColor: Colors.orange),
+                          );
+                          Navigator.pop(context);
+                        }
+                      }
+                    },
+                  );
+                } else {
+                  return IconButton(
+                    icon: const Icon(Icons.person_add, color: Colors.white),
+                    tooltip: "Add Friend",
+                    onPressed: () async {
+                      final success =
+                          await context.read<CardProvider>().addFriend(card.id);
+                      if (success && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text("Friend request sent"),
+                              backgroundColor: Colors.green),
+                        );
+                      }
+                    },
+                  );
+                }
+              },
+            ),
         ],
       ),
       body: SingleChildScrollView(

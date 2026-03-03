@@ -10,7 +10,9 @@ class CardProvider extends ChangeNotifier {
 
   bool isLoading = false;
   bool isCreating = false;
+  bool isLoadingRequests = false;
   List<BusinessCardModel> cards = [];
+  List<BusinessCardModel> friendRequests = [];
 
   Future<void> fetchCards() async {
     try {
@@ -37,6 +39,7 @@ class CardProvider extends ChangeNotifier {
     String? bio,
     String? profileImage,
     File? imageFile,
+    String? cardType,
   }) async {
     try {
       isCreating = true;
@@ -51,6 +54,7 @@ class CardProvider extends ChangeNotifier {
         addresses: addresses,
         bio: bio,
         profileImage: profileImage,
+        cardType: cardType,
       );
 
       final created =
@@ -124,11 +128,36 @@ class CardProvider extends ChangeNotifier {
     }
   }
 
+  Future<List<BusinessCardModel>> searchCards(
+    String query, {
+    int? companyId,
+    String cardType = 'user_card',
+  }) async {
+    try {
+      return await _api.searchCards(
+        query,
+        companyId: companyId,
+        cardType: cardType,
+      );
+    } catch (e) {
+      debugPrint("SEARCH ERROR: $e");
+      return [];
+    }
+  }
+
+  Future<BusinessCardModel?> scanQr(String qrData) async {
+    try {
+      return await _api.scanQr(qrData);
+    } catch (e) {
+      debugPrint("SCAN ERROR: $e");
+      return null;
+    }
+  }
+
   Future<bool> addFriend(int cardId) async {
     try {
       await _api.addFriend(cardId);
-      // Refresh list to update UI
-      await fetchCards();
+      await fetchFriendRequests();
       return true;
     } catch (e) {
       debugPrint("ADD FRIEND ERROR: $e");
@@ -136,11 +165,50 @@ class CardProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> fetchFriendRequests() async {
+    try {
+      isLoadingRequests = true;
+      notifyListeners();
+      friendRequests = await _api.getFriendRequests();
+    } catch (e) {
+      debugPrint("FRIEND REQUEST FETCH ERROR: $e");
+      friendRequests = [];
+    } finally {
+      isLoadingRequests = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> acceptFriendRequest(int cardId) async {
+    try {
+      await _api.acceptFriendRequest(cardId);
+      friendRequests.removeWhere((card) => card.id == cardId);
+      await fetchCards();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint("ACCEPT FRIEND ERROR: $e");
+      return false;
+    }
+  }
+
+  Future<bool> rejectFriendRequest(int cardId) async {
+    try {
+      await _api.rejectFriendRequest(cardId);
+      friendRequests.removeWhere((card) => card.id == cardId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint("REJECT FRIEND ERROR: $e");
+      return false;
+    }
+  }
+
   Future<bool> removeFriend(int cardId) async {
     try {
       await _api.removeFriend(cardId);
-      // Refresh list to update UI
       await fetchCards();
+      await fetchFriendRequests();
       return true;
     } catch (e) {
       debugPrint("REMOVE FRIEND ERROR: $e");

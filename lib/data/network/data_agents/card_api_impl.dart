@@ -129,12 +129,84 @@ class CardApiImpl implements CardApi {
   }
 
   @override
-  Future<void> addFriend(int cardId) async {
+  Future<List<BusinessCardModel>> searchCards(
+    String query, {
+    int? companyId,
+    String cardType = 'user_card',
+  }) async {
     try {
-      await dio.post('${ApiConstants.cards}/$cardId/add-friend');
+      final res =
+          await dio.get('${ApiConstants.cards}/search', queryParameters: {
+        'query': query,
+        if (companyId != null) 'company_id': companyId,
+        'card_type': cardType,
+      });
+      final List list = res.data['data'];
+      return list
+          .map((e) => BusinessCardModel.fromJson(e))
+          .where((card) => card.cardType == cardType)
+          .toList();
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Failed to search cards');
+    }
+  }
+
+  @override
+  Future<BusinessCardModel> scanQr(String qrData) async {
+    try {
+      final res = await dio.post('${ApiConstants.cards}/scan-qr', data: {
+        'qr_code_data': qrData,
+      });
+      return BusinessCardModel.fromJson(res.data['data']);
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Card not found');
+    }
+  }
+
+  @override
+  Future<BusinessCardModel> addFriend(int cardId) async {
+    try {
+      final res = await dio.post('${ApiConstants.cards}/$cardId/add-friend');
+      return BusinessCardModel.fromJson(res.data['data']);
     } on DioException catch (e) {
       throw Exception(
         e.response?.data['message'] ?? 'Failed to add friend',
+      );
+    }
+  }
+
+  @override
+  Future<List<BusinessCardModel>> getFriendRequests() async {
+    try {
+      final res = await dio.get('${ApiConstants.cards}/friend-requests');
+      final List list = res.data['data'];
+      return list.map((e) => BusinessCardModel.fromJson(e)).toList();
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data['message'] ?? 'Failed to fetch friend requests',
+      );
+    }
+  }
+
+  @override
+  Future<BusinessCardModel> acceptFriendRequest(int cardId) async {
+    try {
+      final res = await dio.post('${ApiConstants.cards}/$cardId/accept-friend');
+      return BusinessCardModel.fromJson(res.data['data']);
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data['message'] ?? 'Failed to accept friend request',
+      );
+    }
+  }
+
+  @override
+  Future<void> rejectFriendRequest(int cardId) async {
+    try {
+      await dio.post('${ApiConstants.cards}/$cardId/reject-friend');
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data['message'] ?? 'Failed to reject friend request',
       );
     }
   }

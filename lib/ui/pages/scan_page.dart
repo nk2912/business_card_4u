@@ -1,76 +1,101 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:provider/provider.dart';
+import '../../bloc/card/card_provider.dart';
+import 'card_detail_page.dart';
 
-class ScanPage extends StatelessWidget {
+class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
+
+  @override
+  State<ScanPage> createState() => _ScanPageState();
+}
+
+class _ScanPageState extends State<ScanPage> {
+  final MobileScannerController controller = MobileScannerController();
+  bool _isProcessing = false;
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  void _handleBarcode(BarcodeCapture capture) async {
+    if (_isProcessing) return;
+    
+    final List<Barcode> barcodes = capture.barcodes;
+    if (barcodes.isEmpty) return;
+    
+    final String? code = barcodes.first.rawValue;
+    if (code == null || code.isEmpty) return;
+
+    setState(() => _isProcessing = true);
+    
+    try {
+      final card = await context.read<CardProvider>().scanQr(code);
+      if (!mounted) return;
+      
+      if (card != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => CardDetailPage(card: card)),
+        );
+      } else {
+         ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Card not found for this QR code"), backgroundColor: Colors.red),
+        );
+        setState(() => _isProcessing = false);
+      }
+    } catch (e) {
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Error scanning QR code"), backgroundColor: Colors.red),
+        );
+        setState(() => _isProcessing = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Scan QR Code'),
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        titleTextStyle: const TextStyle(
-          color: Colors.black87,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
+        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1E3C72), Color(0xFF2A5298)],
+            ),
+          ),
         ),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
+      body: Stack(
+        children: [
+          MobileScanner(
+            controller: controller,
+            onDetect: _handleBarcode,
+          ),
+          Center(
+            child: Container(
+              width: 250,
+              height: 250,
               decoration: BoxDecoration(
-                color: const Color(0xFF2563EB).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.qr_code_scanner,
-                size: 64,
-                color: Color(0xFF2563EB),
+                border: Border.all(color: Colors.white, width: 2),
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              "QR Scanner Coming Soon",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1F2937),
-              ),
+          ),
+          if (_isProcessing)
+            Container(
+              color: Colors.black54,
+              child: const Center(child: CircularProgressIndicator()),
             ),
-            const SizedBox(height: 12),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 48),
-              child: Text(
-                "We are optimizing the scanner for better performance. Please check back later!",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.grey,
-                  height: 1.5,
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child:
-                  const Text("Go Back", style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }

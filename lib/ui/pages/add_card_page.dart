@@ -160,6 +160,7 @@ class _AddCardPageState extends State<AddCardPage> {
         bio: bio.isEmpty ? null : bio,
         profileImage: profileImage.isEmpty ? null : profileImage,
         imageFile: _pickedImage, // Pass image file
+        cardType: 'saved_card', // Manual entries are 'saved_card'
       );
     }
 
