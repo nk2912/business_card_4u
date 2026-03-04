@@ -9,6 +9,39 @@ class AuthApiImpl implements AuthApi {
 
   AuthApiImpl(this.dio);
 
+  String _extractErrorMessage(DioException e, {String fallback = 'Something went wrong'}) {
+    final data = e.response?.data;
+
+    if (data is Map) {
+      final message = data['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message;
+      }
+
+      final errors = data['errors'];
+      if (errors is Map) {
+        for (final value in errors.values) {
+          if (value is List && value.isNotEmpty) {
+            final first = value.first;
+            if (first is String && first.trim().isNotEmpty) {
+              return first;
+            }
+          }
+
+          if (value is String && value.trim().isNotEmpty) {
+            return value;
+          }
+        }
+      }
+    }
+
+    if (data is String && data.trim().isNotEmpty) {
+      return data;
+    }
+
+    return fallback;
+  }
+
   /// ================= LOGIN =================
   @override
   Future<LoginResponse> login(LoginRequest request) async {
@@ -20,7 +53,7 @@ class AuthApiImpl implements AuthApi {
 
       return LoginResponse.fromJson(res.data);
     } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? 'Login failed');
+      throw Exception(_extractErrorMessage(e, fallback: 'Login failed'));
     }
   }
 
@@ -38,10 +71,7 @@ class AuthApiImpl implements AuthApi {
       // success message from backend
       return response.data['message'] as String;
     } on DioException catch (e) {
-      // error message from backend
-      throw Exception(
-        e.response?.data['message'] ?? 'Something went wrong',
-      );
+      throw Exception(_extractErrorMessage(e, fallback: ''));
     }
   }
 
@@ -82,9 +112,7 @@ class AuthApiImpl implements AuthApi {
 
       return LoginResponse.fromJson(res.data);
     } on DioException catch (e) {
-      throw Exception(
-        e.response?.data['message'] ?? 'Registration failed',
-      );
+      throw Exception(_extractErrorMessage(e, fallback: 'Registration failed'));
     }
   }
 
@@ -94,9 +122,7 @@ class AuthApiImpl implements AuthApi {
     try {
       await dio.post(ApiConstants.logout);
     } on DioException catch (e) {
-      throw Exception(
-        e.response?.data['message'] ?? 'Logout failed',
-      );
+      throw Exception(_extractErrorMessage(e, fallback: 'Logout failed'));
     }
   }
 
@@ -107,9 +133,7 @@ class AuthApiImpl implements AuthApi {
       final res = await dio.post(ApiConstants.me);
       return res.data['user'];
     } on DioException catch (e) {
-      throw Exception(
-        e.response?.data['message'] ?? 'Fetch profile failed',
-      );
+      throw Exception(_extractErrorMessage(e, fallback: 'Fetch profile failed'));
     }
   }
 }

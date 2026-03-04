@@ -22,16 +22,34 @@ class CardPage extends StatefulWidget {
 }
 
 class _CardPageState extends State<CardPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
-  String _query = "";
+  final String _query = "";
   String? _selectedCompanyFilter; // null means "All"
+  String? _lastShownMessage;
   TabController? _tabController;
+  late final AnimationController _bellController;
+  late final Animation<double> _bellRotation;
+  int _previousNotificationCount = 0;
+  bool _hasSeenInitialNotificationCount = false;
 
   @override
   void initState() {
     super.initState();
     _initTabController();
+    _bellController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _bellRotation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0, end: -.12), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -.12, end: .12), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: .12, end: -.10), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: -.10, end: .08), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: .08, end: 0), weight: 1),
+    ]).animate(
+      CurvedAnimation(parent: _bellController, curve: Curves.easeOut),
+    );
 
     Future.microtask(() {
       if (!mounted) return;
@@ -54,6 +72,7 @@ class _CardPageState extends State<CardPage>
 
   @override
   void dispose() {
+    _bellController.dispose();
     _tabController?.dispose();
     _searchController.dispose();
     super.dispose();
@@ -225,6 +244,31 @@ class _CardPageState extends State<CardPage>
     );
   }
 
+  void _showInfoMessage(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Color(0xFF1E3A8A),
+            fontWeight: FontWeight.w700,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        backgroundColor: const Color(0xFFDCEBFF),
+        behavior: SnackBarBehavior.floating,
+        elevation: 0,
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: Color(0xFFBFDBFE)),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_tabController == null) {
@@ -232,14 +276,45 @@ class _CardPageState extends State<CardPage>
     }
 
     final provider = context.watch<CardProvider>();
+    final notificationCount = provider.friendRequests.length;
+    if (!_hasSeenInitialNotificationCount) {
+      _previousNotificationCount = notificationCount;
+      _hasSeenInitialNotificationCount = true;
+    } else if (notificationCount > _previousNotificationCount) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _bellController.forward(from: 0);
+        }
+      });
+      _previousNotificationCount = notificationCount;
+    } else if (notificationCount != _previousNotificationCount) {
+      _previousNotificationCount = notificationCount;
+    }
+
     final auth = context.watch<AuthProvider>();
+    final pendingMessage = auth.pendingMessage;
+    if (pendingMessage != null && pendingMessage != _lastShownMessage) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final message = context.read<AuthProvider>().consumePendingMessage();
+        if (message == null) return;
+        _lastShownMessage = message;
+        _showInfoMessage(message);
+      });
+    } else if (pendingMessage == null) {
+      _lastShownMessage = null;
+    }
+
     final currentUser = auth.currentUser;
     BusinessCardModel? myProfileCard;
     try {
       myProfileCard = provider.cards.firstWhere((c) {
-        if (currentUser == null) return false;
-        if (c.cardType != 'user_card')
+        if (currentUser == null) {
+          return false;
+        }
+        if (c.cardType != 'user_card') {
           return false; // Profile is now 'user_card'
+        }
 
         // STRICT MATCH: The card's email must match the user's login email
         return c.emails.contains(currentUser.email);
@@ -250,9 +325,12 @@ class _CardPageState extends State<CardPage>
 
     // 2. My Saved Cards -> Manual entries created by me ('saved_card')
     final mySavedCards = provider.cards.where((c) {
-      if (c.cardType != 'saved_card') return false;
-      if (currentUser != null && c.user?.id != currentUser.id)
+      if (c.cardType != 'saved_card') {
+        return false;
+      }
+      if (currentUser != null && c.user?.id != currentUser.id) {
         return false; // Must be mine
+      }
       return true;
     }).toList();
 
@@ -413,7 +491,17 @@ class _CardPageState extends State<CardPage>
                 icon: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    const Icon(Icons.notifications_none, color: Colors.black87),
+                    AnimatedBuilder(
+                      animation: _bellRotation,
+                      builder: (context, child) {
+                        return Transform.rotate(
+                          angle: _bellRotation.value,
+                          alignment: Alignment.topCenter,
+                          child: child,
+                        );
+                      },
+                      child: const Icon(Icons.notifications_none, color: Colors.black87),
+                    ),
                     if (count > 0)
                       Positioned(
                         right: -4,

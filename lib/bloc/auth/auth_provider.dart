@@ -12,6 +12,7 @@ class AuthProvider extends ChangeNotifier {
   bool isCheckingSession = false;
   bool isLoggedIn = false;
   UserModel? currentUser;
+  String? pendingMessage;
 
   final _api = AuthApiImpl(DioClient.create());
   late final VoidCallback _unauthorizedListener;
@@ -37,6 +38,7 @@ class AuthProvider extends ChangeNotifier {
 
       await TokenStorage.save(res.token);
       currentUser = UserModel.fromJson(res.user);
+      pendingMessage = res.message;
       isLoggedIn = true;
       return true;
     } catch (e) {
@@ -55,8 +57,37 @@ class AuthProvider extends ChangeNotifier {
     try {
       final message = await _api.sendOtp(email);
       return message;
+    } on DioException catch (e) {
+      final data = e.response?.data;
+
+      if (data is Map) {
+        final message = data['message'];
+        if (message is String && message.trim().isNotEmpty) {
+          return message;
+        }
+
+        final errors = data['errors'];
+        if (errors is Map) {
+          for (final value in errors.values) {
+            if (value is List && value.isNotEmpty && value.first is String) {
+              return value.first as String;
+            }
+
+            if (value is String && value.trim().isNotEmpty) {
+              return value;
+            }
+          }
+        }
+      }
+
+      if (data is String && data.trim().isNotEmpty) {
+        return data;
+      }
+
+      return null;
     } catch (e) {
-      return e.toString().replaceFirst("Exception: ", "");
+      final message = e.toString().replaceFirst("Exception: ", "").trim();
+      return message.isEmpty ? null : message;
     } finally {
       isLoading = false;
       notifyListeners();
@@ -142,7 +173,14 @@ class AuthProvider extends ChangeNotifier {
     await TokenStorage.clear();
     isLoggedIn = false;
     currentUser = null;
+    pendingMessage = 'Logged out successfully';
     notifyListeners();
+  }
+
+  String? consumePendingMessage() {
+    final message = pendingMessage;
+    pendingMessage = null;
+    return message;
   }
 
   void cancelLoading() {

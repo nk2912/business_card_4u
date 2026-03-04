@@ -19,6 +19,7 @@ class BusinessCardModel {
   final String friendStatus;
   final String? friendRequestStatus; // Added field
   final String? tag;
+  final DateTime? createdAt;
 
   BusinessCardModel({
     required this.id,
@@ -38,6 +39,7 @@ class BusinessCardModel {
     this.friendStatus = 'none',
     this.friendRequestStatus = 'none', // Added default
     this.tag,
+    this.createdAt,
   });
 
   factory BusinessCardModel.fromJson(Map<String, dynamic> json) {
@@ -64,6 +66,13 @@ class BusinessCardModel {
       friendRequestStatus:
           json['friend_request_status'] ?? 'none', // Added mapping
       tag: json['tag'],
+      createdAt: json['request_created_at_myanmar'] != null
+          ? DateTime.tryParse(json['request_created_at_myanmar'].toString())
+          : json['request_created_at'] != null
+              ? DateTime.tryParse(json['request_created_at'].toString())
+          : json['created_at'] != null
+              ? DateTime.tryParse(json['created_at'].toString())
+          : null,
     );
   }
 

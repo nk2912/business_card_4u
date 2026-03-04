@@ -33,6 +33,24 @@ class _AddCardPageState extends State<AddCardPage> {
 
   bool get isEditing => widget.card != null;
 
+  void _showToast(String message, {bool isError = false}) {
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (_) => _CardStatusToast(
+        message: message,
+        isError: isError,
+      ),
+    );
+
+    overlay.insert(entry);
+
+    Future.delayed(const Duration(seconds: 2)).then((_) {
+      if (entry.mounted) {
+        entry.remove();
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -166,24 +184,18 @@ class _AddCardPageState extends State<AddCardPage> {
 
     if (!mounted) return;
     if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEditing
-              ? 'Business card updated successfully'
-              : 'Business card created successfully'),
-          backgroundColor: isEditing
-              ? Colors.blue
-              : Colors.green, // Update: Blue, Create: Green
-        ),
+      _showToast(
+        isEditing
+            ? 'Business card updated successfully'
+            : 'Business card created successfully',
       );
+      await Future.delayed(const Duration(milliseconds: 900));
+      if (!mounted) return;
       Navigator.of(context).pop(true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              isEditing ? 'Failed to update card' : 'Failed to create card'),
-          backgroundColor: Colors.redAccent,
-        ),
+      _showToast(
+        isEditing ? 'Failed to update card' : 'Failed to create card',
+        isError: true,
       );
     }
   }
@@ -201,6 +213,20 @@ class _AddCardPageState extends State<AddCardPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
+        actions: isEditing
+            ? [
+                IconButton(
+                  onPressed: isCreating ? null : _submit,
+                  icon: Icon(
+                    Icons.save_outlined,
+                    color: isCreating
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF2563EB),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ]
+            : null,
       ),
       body: Stack(
         children: [
@@ -332,29 +358,30 @@ class _AddCardPageState extends State<AddCardPage> {
                   //   icon: Icons.image_outlined,
                   // ),
                   const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: isCreating ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  if (!isEditing)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: isCreating ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563EB),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 4,
+                          shadowColor: const Color(0xFF2563EB).withOpacity(0.4),
                         ),
-                        elevation: 4,
-                        shadowColor: const Color(0xFF2563EB).withOpacity(0.4),
-                      ),
-                      child: Text(
-                        isEditing ? 'Update Card' : 'Create Card',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                        child: const Text(
+                          'Create Card',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -481,6 +508,59 @@ class _AddCardPageState extends State<AddCardPage> {
             ),
             Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CardStatusToast extends StatelessWidget {
+  final String message;
+  final bool isError;
+
+  const _CardStatusToast({
+    required this.message,
+    required this.isError,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const successBg = Color(0xFFDCEBFF);
+    const successText = Color(0xFF1E3A8A);
+    const errorBg = Color(0xFFFEE2E2);
+    const errorText = Color(0xFFB42318);
+
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              decoration: BoxDecoration(
+                color: isError ? errorBg : successBg,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(.08),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isError ? errorText : successText,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

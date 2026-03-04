@@ -17,6 +17,32 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  String? _lastShownMessage;
+
+  void _showInfoMessage(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Color(0xFF1E3A8A),
+            fontWeight: FontWeight.w700,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        backgroundColor: const Color(0xFFDCEBFF),
+        behavior: SnackBarBehavior.floating,
+        elevation: 0,
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: Color(0xFFBFDBFE)),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -29,6 +55,19 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final theme = Theme.of(context);
+    final pendingMessage = auth.pendingMessage;
+
+    if (pendingMessage != null && pendingMessage != _lastShownMessage) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final message = context.read<AuthProvider>().consumePendingMessage();
+        if (message == null) return;
+        _lastShownMessage = message;
+        _showInfoMessage(message);
+      });
+    } else if (pendingMessage == null) {
+      _lastShownMessage = null;
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),

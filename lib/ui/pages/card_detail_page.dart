@@ -12,6 +12,30 @@ class CardDetailPage extends StatelessWidget {
 
   const CardDetailPage({super.key, required this.card});
 
+  void _showToast(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+    bool isWarning = false,
+  }) {
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (_) => _CardDetailToast(
+        message: message,
+        isError: isError,
+        isWarning: isWarning,
+      ),
+    );
+
+    overlay.insert(entry);
+
+    Future.delayed(const Duration(seconds: 2)).then((_) {
+      if (entry.mounted) {
+        entry.remove();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Get current user to check ownership
@@ -170,10 +194,10 @@ class CardDetailPage extends StatelessWidget {
                             .read<CardProvider>()
                             .removeFriend(card.id);
                         if (success && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text("Friend removed successfully"),
-                                backgroundColor: Colors.orange),
+                          _showToast(
+                            context,
+                            "Friend removed successfully",
+                            isWarning: true,
                           );
                           Navigator.pop(context);
                         }
@@ -188,11 +212,7 @@ class CardDetailPage extends StatelessWidget {
                       final success =
                           await context.read<CardProvider>().addFriend(card.id);
                       if (success && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text("Friend request sent"),
-                              backgroundColor: Colors.green),
-                        );
+                        _showToast(context, "Friend request sent");
                       }
                     },
                   );
@@ -397,6 +417,71 @@ class CardDetailPage extends StatelessWidget {
             ),
             const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CardDetailToast extends StatelessWidget {
+  final String message;
+  final bool isError;
+  final bool isWarning;
+
+  const _CardDetailToast({
+    required this.message,
+    required this.isError,
+    this.isWarning = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const successBg = Color(0xFFDCEBFF);
+    const successText = Color(0xFF1E3A8A);
+    const warningBg = Color(0xFFFFEDD5);
+    const warningText = Color(0xFF9A3412);
+    const errorBg = Color(0xFFFEE2E2);
+    const errorText = Color(0xFFB42318);
+
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              decoration: BoxDecoration(
+                color: isError
+                    ? errorBg
+                    : isWarning
+                        ? warningBg
+                        : successBg,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(.08),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isError
+                      ? errorText
+                      : isWarning
+                          ? warningText
+                          : successText,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

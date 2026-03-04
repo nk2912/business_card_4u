@@ -18,6 +18,24 @@ class _CardItemState extends State<CardItem> {
   late bool _isFriend;
   late String _friendRequestStatus;
 
+  void _showToast(String message, {bool isError = false}) {
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (_) => _FriendRequestToast(
+        message: message,
+        isError: isError,
+      ),
+    );
+
+    overlay.insert(entry);
+
+    Future.delayed(const Duration(seconds: 2)).then((_) {
+      if (entry.mounted) {
+        entry.remove();
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -138,12 +156,7 @@ class _CardItemState extends State<CardItem> {
                             setState(() {
                               _friendRequestStatus = 'pending';
                             });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Friend request sent"),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
+                            _showToast("Friend request sent");
                           }
                         },
                       )
@@ -252,6 +265,59 @@ class _CardItemState extends State<CardItem> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FriendRequestToast extends StatelessWidget {
+  final String message;
+  final bool isError;
+
+  const _FriendRequestToast({
+    required this.message,
+    required this.isError,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const successBg = Color(0xFFDCEBFF);
+    const successText = Color(0xFF1E3A8A);
+    const errorBg = Color(0xFFFEE2E2);
+    const errorText = Color(0xFFB42318);
+
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              decoration: BoxDecoration(
+                color: isError ? errorBg : successBg,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(.08),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isError ? errorText : successText,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../bloc/auth/auth_provider.dart';
 import 'otp_page.dart';
 
@@ -13,25 +14,54 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _emailController = TextEditingController();
 
-  void _showToast(String message, {bool isError = false}) {
-    final overlay = Overlay.of(context);
-
-    final entry = OverlayEntry(
-      builder: (_) => Positioned(
-        bottom: 80,
-        left: 24,
-        right: 24,
-        child: _PremiumToast(
-          message: message,
-          isError: isError,
+  void _toast(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(
+            color: isError ? Colors.white : const Color(0xFF1E3A8A),
+            fontWeight: FontWeight.w700,
+          ),
+          textAlign: TextAlign.center,
         ),
+        backgroundColor: isError ? const Color(0xFFB42318) : const Color(0xFFDCEBFF),
+        behavior: SnackBarBehavior.floating,
+        elevation: 0,
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(
+            color: isError ? const Color(0xFFDC2626) : const Color(0xFFBFDBFE),
+          ),
+        ),
+        duration: const Duration(seconds: 2),
       ),
     );
+  }
 
-    overlay.insert(entry);
+  Future<void> _submit(AuthProvider auth) async {
+    final email = _emailController.text.trim();
 
-    Future.delayed(const Duration(seconds: 2))
-        .then((_) => entry.remove());
+    final message = await auth.sendOtp(email);
+
+    if (!mounted) return;
+
+    final lower = (message ?? "").toLowerCase();
+    final isSuccess = lower.contains("success") || lower.contains("sent");
+
+    if (message != null && message.trim().isNotEmpty) {
+      _toast(message, isError: !isSuccess);
+    }
+
+    if (isSuccess) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => OtpPage(email: email)),
+      );
+    }
   }
 
   @override
@@ -44,152 +74,183 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
 
+    const bg = Color(0xFFF7F8FC);
+    const text = Color(0xFF0B1220);
+    const muted = Color(0xFF5B6473);
+    const border = Color(0xFFE7EAF3);
+
+    const deep = Color(0xFF0A2A66);
+    const blue = Color(0xFF2F6FDB);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: bg,
       body: SafeArea(
         child: Padding(
-          padding:
-          const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Simple top branding
+              Row(
+                children: [
+                  Container(
+                    height: 40,
+                    width: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      gradient: const LinearGradient(colors: [deep, blue]),
+                    ),
+                    child: const Icon(Icons.badge_outlined, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    "businessCard4U",
+                    style: TextStyle(
+                      color: text,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
 
+              const SizedBox(height: 24),
+
+              // Title + subtitle
               const Text(
-                "Create Account",
+                "Create your account",
                 style: TextStyle(
+                  color: text,
+                  fontWeight: FontWeight.w900,
                   fontSize: 28,
-                  fontWeight: FontWeight.bold,
+                  height: 1.1,
                 ),
               ),
-
-              const SizedBox(height: 8),
-
-              Text(
-                "Enter your email to receive verification code",
+              const SizedBox(height: 10),
+              const Text(
+                "Enter your email to receive a verification code.",
                 style: TextStyle(
-                  color: Colors.grey.shade600,
+                  color: muted,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  height: 1.45,
                 ),
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 22),
 
+              // Form (one clean card)
               Container(
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: border),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(.05),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    )
+                      color: Colors.black.withOpacity(.06),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
+                    ),
                   ],
                 ),
-                child: TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.email_outlined),
-                    hintText: "Enter your email",
-                    border: InputBorder.none,
-                    contentPadding:
-                    EdgeInsets.symmetric(vertical: 18),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    elevation: 0,
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.circular(30),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Email",
+                      style: TextStyle(
+                        color: text,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
                     ),
-                  ),
-                  onPressed: auth.isLoading
-                      ? null
-                      : () async {
+                    const SizedBox(height: 10),
 
-                    if (_emailController.text.isEmpty) {
-                      _showToast(
-                        "Email is required",
-                        isError: true,
-                      );
-                      return;
-                    }
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F8FC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: border),
+                      ),
+                      child: TextField(
+                        controller: _emailController,
+                        enabled: !auth.isLoading,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => auth.isLoading ? null : _submit(auth),
+                        decoration: const InputDecoration(
+                          hintText: "name@company.com",
+                          prefixIcon: Icon(Icons.alternate_email_rounded, color: blue),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        ),
+                        style: const TextStyle(
+                          color: text,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
 
-                    final message = await context
-                        .read<AuthProvider>()
-                        .sendOtp(
-                      _emailController.text.trim(),
-                    );
+                    const SizedBox(height: 14),
 
-                    if (!context.mounted) return;
-
-                    final isSuccess =
-                        message != null &&
-                            message
-                                .toLowerCase()
-                                .contains("success");
-
-                    _showToast(
-                      message ?? "Something went wrong",
-                      isError: !isSuccess,
-                    );
-
-                    if (isSuccess) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => OtpPage(
-                            email:
-                            _emailController.text.trim(),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: auth.isLoading ? null : () => _submit(auth),
+                        style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                      );
-                    }
-                  },
-                  child: Ink(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Color(0xFF1E3C72),
-                          Color(0xFF2A5298),
-                        ],
-                      ),
-                      borderRadius:
-                      BorderRadius.all(
-                          Radius.circular(30)),
-                    ),
-                    child: Container(
-                      alignment: Alignment.center,
-                      child: auth.isLoading
-                          ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child:
-                        CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                          : const Text(
-                        "Send OTP",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight:
-                          FontWeight.w600,
+                        child: Ink(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: auth.isLoading
+                                  ? [deep.withOpacity(.55), blue.withOpacity(.55)]
+                                  : const [deep, blue],
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Center(
+                            child: auth.isLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.4,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Send code",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+
+                    const SizedBox(height: 10),
+
+                    const Text(
+                      "Code expires in 5 minutes.",
+                      style: TextStyle(
+                        color: muted,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
@@ -197,57 +258,15 @@ class _RegisterPageState extends State<RegisterPage> {
 
               Center(
                 child: Text(
-                  "businessCard4U",
-                  style: TextStyle(
-                    color: Colors.grey.shade400,
+                  "© ${DateTime.now().year} businessCard4U",
+                  style: const TextStyle(
+                    color: muted,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
                   ),
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PremiumToast extends StatelessWidget {
-  final String message;
-  final bool isError;
-
-  const _PremiumToast({
-    required this.message,
-    required this.isError,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        padding:
-        const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        decoration: BoxDecoration(
-          color: isError
-              ? const Color(0xFFE9D5FF)
-              : const Color(0xFFDCEBFF),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(.08),
-              blurRadius: 15,
-              offset: const Offset(0, 6),
-            )
-          ],
-        ),
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isError
-                ? const Color(0xFF6B21A8)
-                : const Color(0xFF1E3A8A),
-            fontWeight: FontWeight.w500,
           ),
         ),
       ),
