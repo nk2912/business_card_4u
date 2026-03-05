@@ -36,8 +36,9 @@ class ImageUrl {
 
   static Uri _serverBaseUri() {
     final apiUri = Uri.parse(ApiConstants.baseUrl);
-    final segments = List<String>.from(apiUri.pathSegments);
-    if (segments.isNotEmpty && segments.last == 'api') {
+    final segments =
+        List<String>.from(apiUri.pathSegments.where((s) => s.isNotEmpty));
+    if (segments.isNotEmpty && segments.last.toLowerCase() == 'api') {
       segments.removeLast();
     }
     return apiUri.replace(pathSegments: segments);
