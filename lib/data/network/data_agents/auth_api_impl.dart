@@ -18,6 +18,11 @@ class AuthApiImpl implements AuthApi {
         return message;
       }
 
+      final error = data['error'];
+      if (error is String && error.trim().isNotEmpty) {
+        return error;
+      }
+
       final errors = data['errors'];
       if (errors is Map) {
         for (final value in errors.values) {
