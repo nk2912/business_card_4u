@@ -66,12 +66,27 @@ class AuthApiImpl implements AuthApi {
         data: {
           "email": email,
         },
+        options: Options(
+          sendTimeout: const Duration(seconds: 20),
+          receiveTimeout: const Duration(seconds: 20),
+        ),
       );
 
-      // success message from backend
-      return response.data['message'] as String;
+      final data = response.data;
+      if (data is Map) {
+        final message = data['message'];
+        if (message is String && message.trim().isNotEmpty) {
+          return message;
+        }
+      }
+
+      if (data is String && data.trim().isNotEmpty) {
+        return data;
+      }
+
+      return 'OTP sent successfully';
     } on DioException catch (e) {
-      throw Exception(_extractErrorMessage(e, fallback: ''));
+      throw Exception(_extractErrorMessage(e, fallback: 'Failed to send OTP'));
     }
   }
 
@@ -79,15 +94,26 @@ class AuthApiImpl implements AuthApi {
   /// ================= VERIFY OTP ONLY =================
   @override
   Future<String> verifyOtp(String email, String otp) async {
-    final res = await dio.post(
-      ApiConstants.verifyOtp,
-      data: {
-        "email": email,
-        "otp": otp,
-      },
-    );
+    try {
+      final res = await dio.post(
+        ApiConstants.verifyOtp,
+        data: {
+          "email": email,
+          "otp": otp,
+        },
+      );
 
-    return res.data["message"].toString();
+      final data = res.data;
+      if (data is Map && data['message'] != null) {
+        return data['message'].toString();
+      }
+      if (data is String && data.trim().isNotEmpty) {
+        return data;
+      }
+      return 'OTP verified successfully';
+    } on DioException catch (e) {
+      throw Exception(_extractErrorMessage(e, fallback: 'OTP verification failed'));
+    }
   }
 
 

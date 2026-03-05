@@ -90,19 +90,13 @@ class _OtpPageState extends State<OtpPage> {
       return;
     }
 
-    final message = await context.read<AuthProvider>().verifyOtpOnly(widget.email, otp);
+    final result = await context.read<AuthProvider>().verifyOtpOnly(widget.email, otp);
 
     if (!mounted) return;
+    final message = result.message ?? (result.success ? "OTP verified" : "Something went wrong");
+    _showMessage(message, isError: !result.success);
 
-    if (message == null) {
-      _showMessage("Something went wrong", isError: true);
-      return;
-    }
-
-    final isSuccess = message.toLowerCase().contains("success");
-    _showMessage(message, isError: !isSuccess);
-
-    if (isSuccess) {
+    if (result.success) {
       Future.delayed(const Duration(milliseconds: 450), () {
         if (!mounted) return;
         Navigator.pushReplacement(
@@ -118,19 +112,15 @@ class _OtpPageState extends State<OtpPage> {
   Future<void> _resendOtp() async {
     if (_secondsRemaining != 0) return;
 
-    final message = await context.read<AuthProvider>().sendOtp(widget.email);
+    final result = await context.read<AuthProvider>().sendOtp(widget.email);
 
     if (!mounted) return;
+    _showMessage(
+      result.message ?? (result.success ? "OTP resent" : "Failed to resend OTP"),
+      isError: !result.success,
+    );
 
-    if (message == null) {
-      _showMessage("Failed to resend OTP", isError: true);
-      return;
-    }
-
-    final isSuccess = message.toLowerCase().contains("success");
-    _showMessage(message, isError: !isSuccess);
-
-    if (isSuccess) {
+    if (result.success) {
       setState(() => _secondsRemaining = _initialSeconds);
       _startTimer();
     }

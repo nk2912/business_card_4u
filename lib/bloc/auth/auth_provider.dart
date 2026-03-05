@@ -7,6 +7,16 @@ import '../../data/vos/request/login_request.dart';
 import '../../core/storage/token_storage.dart';
 import '../../data/models/user_model.dart';
 
+class AuthActionResult {
+  final bool success;
+  final String? message;
+
+  const AuthActionResult({
+    required this.success,
+    this.message,
+  });
+}
+
 class AuthProvider extends ChangeNotifier {
   bool isLoading = false;
   bool isCheckingSession = false;
@@ -50,44 +60,50 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// ================= SEND OTP =================
-  Future<String?> sendOtp(String email) async {
+  Future<AuthActionResult> sendOtp(String email) async {
     isLoading = true;
     notifyListeners();
 
     try {
       final message = await _api.sendOtp(email);
-      return message;
+      return AuthActionResult(success: true, message: message);
     } on DioException catch (e) {
       final data = e.response?.data;
 
       if (data is Map) {
         final message = data['message'];
         if (message is String && message.trim().isNotEmpty) {
-          return message;
+          return AuthActionResult(success: false, message: message);
         }
 
         final errors = data['errors'];
         if (errors is Map) {
           for (final value in errors.values) {
             if (value is List && value.isNotEmpty && value.first is String) {
-              return value.first as String;
+              return AuthActionResult(
+                success: false,
+                message: value.first as String,
+              );
             }
 
             if (value is String && value.trim().isNotEmpty) {
-              return value;
+              return AuthActionResult(success: false, message: value);
             }
           }
         }
       }
 
       if (data is String && data.trim().isNotEmpty) {
-        return data;
+        return AuthActionResult(success: false, message: data);
       }
 
-      return null;
+      return const AuthActionResult(success: false, message: 'Failed to send OTP');
     } catch (e) {
       final message = e.toString().replaceFirst("Exception: ", "").trim();
-      return message.isEmpty ? null : message;
+      return AuthActionResult(
+        success: false,
+        message: message.isEmpty ? 'Failed to send OTP' : message,
+      );
     } finally {
       isLoading = false;
       notifyListeners();
@@ -95,17 +111,21 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// ================= VERIFY OTP ONLY =================
-  Future<String?> verifyOtpOnly(String email, String otp) async {
+  Future<AuthActionResult> verifyOtpOnly(String email, String otp) async {
     isLoading = true;
     notifyListeners();
 
     try {
       final message = await _api.verifyOtp(email, otp);
-      return message;
+      return AuthActionResult(success: true, message: message);
     } on DioException catch (e) {
-      return e.response?.data["message"]?.toString() ?? "Something went wrong";
+      final data = e.response?.data;
+      if (data is Map && data['message'] is String) {
+        return AuthActionResult(success: false, message: data['message'] as String);
+      }
+      return const AuthActionResult(success: false, message: 'OTP verification failed');
     } catch (e) {
-      return "Something went wrong";
+      return const AuthActionResult(success: false, message: 'Something went wrong');
     } finally {
       isLoading = false;
       notifyListeners();

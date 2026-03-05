@@ -45,18 +45,16 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _submit(AuthProvider auth) async {
     final email = _emailController.text.trim();
 
-    final message = await auth.sendOtp(email);
+    final result = await auth.sendOtp(email);
 
     if (!mounted) return;
-
-    final lower = (message ?? "").toLowerCase();
-    final isSuccess = lower.contains("success") || lower.contains("sent");
+    final message = result.message;
 
     if (message != null && message.trim().isNotEmpty) {
-      _toast(message, isError: !isSuccess);
+      _toast(message, isError: !result.success);
     }
 
-    if (isSuccess) {
+    if (result.success) {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => OtpPage(email: email)),
