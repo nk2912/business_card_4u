@@ -1,13 +1,13 @@
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../../models/business_card_model.dart';
 import '../responses/card_response.dart';
 
 abstract class CardApi {
   Future<CardResponse> getCards();
   Future<BusinessCardModel> createCard(Map<String, dynamic> data,
-      {File? imageFile});
+      {XFile? imageFile});
   Future<BusinessCardModel> updateCard(int id, Map<String, dynamic> data,
-      {File? imageFile});
+      {XFile? imageFile});
   Future<String> deleteCard(int id);
   Future<List<BusinessCardModel>> searchCards(
     String query, {

@@ -4,6 +4,7 @@ import '../../bloc/card/card_provider.dart';
 import '../../bloc/company/company_provider.dart';
 import '../../data/models/business_card_model.dart';
 import '../components/card_item.dart';
+import '../components/loading_view.dart';
 import '../../data/models/company_model.dart';
 
 class SearchPage extends StatefulWidget {
@@ -143,7 +144,7 @@ class _SearchPageState extends State<SearchPage> {
                         const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: LoadingView(size: 20),
                         )
                       else if (_selectedCompany != null)
                         IconButton(
@@ -177,7 +178,7 @@ class _SearchPageState extends State<SearchPage> {
           
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: LoadingView(size: 90))
                 : _results.isEmpty
                     ? Center(
                         child: Column(

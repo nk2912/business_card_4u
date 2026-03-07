@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../bloc/company/company_provider.dart';
 import '../../data/models/company_model.dart';
+import '../components/loading_view.dart';
 
 class CompanyFormPage extends StatefulWidget {
   final CompanyModel? company;
@@ -271,9 +272,7 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
           if (saving)
             Container(
               color: Colors.black.withOpacity(0.05),
-              child: const Center(
-                child: CircularProgressIndicator(color: Color(0xFF2563EB)),
-              ),
+              child: const Center(child: LoadingView(size: 96)),
             ),
         ],
       ),

@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../bloc/auth/auth_provider.dart';
+import '../components/loading_view.dart';
 
 class CompleteRegisterPage extends StatefulWidget {
   final String email;
@@ -40,10 +41,25 @@ class _CompleteRegisterPageState extends State<CompleteRegisterPage> {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? const Color(0xFFD64545) : const Color(0xFF1E3C72),
+        content: Text(
+          message,
+          style: TextStyle(
+            color: isError ? Colors.white : const Color(0xFF1E3A8A),
+            fontWeight: FontWeight.w700,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        backgroundColor:
+            isError ? const Color(0xFFD64545) : const Color(0xFFDCEBFF),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        elevation: 0,
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(
+            color: isError ? Colors.transparent : const Color(0xFFBFDBFE),
+          ),
+        ),
       ),
     );
   }
@@ -511,11 +527,7 @@ class _GradientButton extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
           child: loading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
-                )
+              ? const LoadingView(size: 30)
               : Text(
                   text,
                   style: const TextStyle(
@@ -541,33 +553,8 @@ class _LoadingGlassOverlay extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
         child: Container(
           color: Colors.black.withOpacity(.08),
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(.88),
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(.12),
-                    blurRadius: 24,
-                    offset: const Offset(0, 14),
-                  ),
-                ],
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2.6),
-                  ),
-                  SizedBox(width: 12),
-                  Text("Please wait...", style: TextStyle(fontWeight: FontWeight.w800)),
-                ],
-              ),
-            ),
+          child: const Center(
+            child: LoadingView(size: 120),
           ),
         ),
       ),

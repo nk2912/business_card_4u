@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/network/api_constants.dart';
 import '../../models/business_card_model.dart';
 import '../responses/card_response.dart';
@@ -19,7 +19,7 @@ class CardApiImpl implements CardApi {
 
   @override
   Future<BusinessCardModel> createCard(Map<String, dynamic> data,
-      {File? imageFile}) async {
+      {XFile? imageFile}) async {
     try {
       dynamic requestData;
 
@@ -38,7 +38,7 @@ class CardApiImpl implements CardApi {
         });
         formData.files.add(MapEntry(
           'profile_image',
-          await MultipartFile.fromFile(imageFile.path),
+          await _multipartFromXFile(imageFile),
         ));
         requestData = formData;
       } else {
@@ -48,6 +48,9 @@ class CardApiImpl implements CardApi {
       final Response res = await dio.post(
         ApiConstants.cards,
         data: requestData,
+        options: imageFile != null
+            ? Options(contentType: 'multipart/form-data')
+            : null,
       );
       final dynamic body = res.data;
       final dynamic dataJson =
@@ -65,7 +68,7 @@ class CardApiImpl implements CardApi {
 
   @override
   Future<BusinessCardModel> updateCard(int id, Map<String, dynamic> data,
-      {File? imageFile}) async {
+      {XFile? imageFile}) async {
     try {
       Response res;
 
@@ -87,12 +90,13 @@ class CardApiImpl implements CardApi {
         });
         formData.files.add(MapEntry(
           'profile_image',
-          await MultipartFile.fromFile(imageFile.path),
+          await _multipartFromXFile(imageFile),
         ));
 
         res = await dio.post(
           '${ApiConstants.cards}/$id',
           data: formData,
+          options: Options(contentType: 'multipart/form-data'),
         );
       } else {
         // Standard PUT for JSON
@@ -220,5 +224,12 @@ class CardApiImpl implements CardApi {
         e.response?.data['message'] ?? 'Failed to remove friend',
       );
     }
+  }
+
+  Future<MultipartFile> _multipartFromXFile(XFile imageFile) async {
+    return MultipartFile.fromBytes(
+      await imageFile.readAsBytes(),
+      filename: imageFile.name,
+    );
   }
 }

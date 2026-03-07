@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../bloc/card/card_provider.dart';
 import '../../data/models/business_card_model.dart';
 import '../../data/models/company_model.dart';
+import '../components/loading_view.dart';
 import 'company_select_page.dart';
 
 class AddCardPage extends StatefulWidget {
@@ -29,7 +30,8 @@ class _AddCardPageState extends State<AddCardPage> {
   final _profileImageCtrl = TextEditingController();
   int? _selectedCompanyId;
   String? _selectedCompanyName;
-  File? _pickedImage; // New
+  XFile? _pickedImage;
+  Uint8List? _pickedImageBytes;
 
   bool get isEditing => widget.card != null;
 
@@ -78,8 +80,10 @@ class _AddCardPageState extends State<AddCardPage> {
 
       if (pickedFile != null) {
         debugPrint("Image picked: ${pickedFile.path}");
+        final bytes = await pickedFile.readAsBytes();
         setState(() {
-          _pickedImage = File(pickedFile.path);
+          _pickedImage = pickedFile;
+          _pickedImageBytes = bytes;
         });
       } else {
         debugPrint("No image picked");
@@ -254,9 +258,9 @@ class _AddCardPageState extends State<AddCardPage> {
                               color: Colors.grey[200],
                               border: Border.all(
                                   color: Colors.grey[300]!, width: 2),
-                              image: _pickedImage != null
+                              image: _pickedImageBytes != null
                                   ? DecorationImage(
-                                      image: FileImage(_pickedImage!),
+                                      image: MemoryImage(_pickedImageBytes!),
                                       fit: BoxFit.cover,
                                     )
                                   : (_profileImageCtrl.text.isNotEmpty &&
@@ -270,7 +274,7 @@ class _AddCardPageState extends State<AddCardPage> {
                                         )
                                       : null),
                             ),
-                            child: (_pickedImage == null &&
+                            child: (_pickedImageBytes == null &&
                                     (_profileImageCtrl.text.isEmpty ||
                                         Uri.tryParse(_profileImageCtrl.text)
                                                 ?.isAbsolute !=
@@ -390,9 +394,7 @@ class _AddCardPageState extends State<AddCardPage> {
           if (isCreating)
             Container(
               color: Colors.white.withOpacity(0.5),
-              child: const Center(
-                child: CircularProgressIndicator(color: Color(0xFF2563EB)),
-              ),
+              child: const Center(child: LoadingView(size: 96)),
             ),
         ],
       ),

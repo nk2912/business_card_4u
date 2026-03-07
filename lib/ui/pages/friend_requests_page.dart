@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../bloc/card/card_provider.dart';
 import '../../core/network/image_url.dart';
 import '../../data/models/business_card_model.dart';
+import '../components/loading_view.dart';
 
 class FriendRequestsPage extends StatefulWidget {
   const FriendRequestsPage({super.key});
@@ -84,7 +85,7 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
         surfaceTintColor: Colors.white,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: LoadingView(size: 90))
           : _requests.isEmpty
               ? Center(
                   child: Text(
@@ -285,14 +286,7 @@ class _FriendRequestCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: isBusy
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.2,
-                              color: Colors.white,
-                            ),
-                          )
+                        ? const LoadingView(size: 18)
                         : const Text(
                             'Accept',
                             style: TextStyle(fontWeight: FontWeight.w900),

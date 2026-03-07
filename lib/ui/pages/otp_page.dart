@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../bloc/auth/auth_provider.dart';
+import '../components/loading_view.dart';
 import 'complete_register_page.dart';
 
 class OtpPage extends StatefulWidget {
@@ -486,11 +487,7 @@ class _GradientButton extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
           child: loading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
-                )
+              ? const LoadingView(size: 22)
               : Text(
                   text,
                   style: const TextStyle(
@@ -533,11 +530,7 @@ class _LoadingGlassOverlay extends StatelessWidget {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2.6),
-                  ),
+                  LoadingView(size: 22),
                   SizedBox(width: 12),
                   Text(
                     "Please wait...",

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../bloc/auth/auth_provider.dart';
+import '../components/loading_view.dart';
 import 'otp_page.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -217,14 +218,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                           child: Center(
                             child: auth.isLoading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.4,
-                                      color: Colors.white,
-                                    ),
-                                  )
+                                ? const LoadingView(size: 22)
                                 : const Text(
                                     "Send code",
                                     style: TextStyle(

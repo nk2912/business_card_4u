@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import '../../bloc/card/card_provider.dart';
+import '../components/loading_view.dart';
 import 'card_detail_page.dart';
 
 class ScanPage extends StatefulWidget {
@@ -93,7 +94,7 @@ class _ScanPageState extends State<ScanPage> {
           if (_isProcessing)
             Container(
               color: Colors.black54,
-              child: const Center(child: CircularProgressIndicator()),
+              child: const Center(child: LoadingView(size: 96)),
             ),
         ],
       ),

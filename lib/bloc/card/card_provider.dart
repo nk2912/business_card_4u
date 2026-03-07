@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/network/dio_client.dart';
 import '../../data/models/business_card_model.dart';
 import '../../data/network/data_agents/card_api_impl.dart';
@@ -38,7 +38,7 @@ class CardProvider extends ChangeNotifier {
     List<String>? addresses,
     String? bio,
     String? profileImage,
-    File? imageFile,
+    XFile? imageFile,
     String? cardType,
   }) async {
     try {
@@ -80,7 +80,7 @@ class CardProvider extends ChangeNotifier {
     List<String>? addresses,
     String? bio,
     String? profileImage,
-    File? imageFile,
+    XFile? imageFile,
   }) async {
     try {
       isCreating = true;

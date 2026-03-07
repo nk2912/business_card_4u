@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../bloc/auth/auth_provider.dart';
 import '../../bloc/company/company_provider.dart';
 import '../../data/models/company_model.dart';
+import '../components/loading_view.dart';
 import 'company_detail_page.dart'; // Uncommented
 import 'company_form_page.dart';
 
@@ -145,7 +146,7 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
         label: const Text("Add New Company"),
       ),
       body: provider.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: LoadingView(size: 90))
           : provider.companies.isEmpty
               ? _buildEmptyState()
               : RefreshIndicator(
