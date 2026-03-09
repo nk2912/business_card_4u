@@ -157,6 +157,28 @@ class AuthApiImpl implements AuthApi {
     }
   }
 
+  @override
+  Future<String> deactivateAccount(String password) async {
+    try {
+      final res = await dio.post(
+        ApiConstants.deactivateAccount,
+        data: {
+          'password': password,
+        },
+      );
+
+      final data = res.data;
+      if (data is Map && data['message'] is String) {
+        return data['message'] as String;
+      }
+      return 'Your account has been deactivated.';
+    } on DioException catch (e) {
+      throw Exception(
+        _extractErrorMessage(e, fallback: 'Failed to deactivate account'),
+      );
+    }
+  }
+
   /// ================= GET PROFILE =================
   @override
   Future<Map<String, dynamic>> getProfile() async {

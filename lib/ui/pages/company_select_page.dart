@@ -3,8 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../bloc/auth/auth_provider.dart';
 import '../../bloc/company/company_provider.dart';
+import '../../core/theme/app_colors.dart';
 import '../../data/models/company_model.dart';
+import '../components/app_toast.dart';
 import '../components/loading_view.dart';
+import '../components/theme_toggle_button.dart';
 import 'company_detail_page.dart'; // Uncommented
 import 'company_form_page.dart';
 
@@ -37,12 +40,10 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
     );
     if (!mounted) return;
     if (result != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Company created successfully'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppToast.show(
+        context,
+        'Company created successfully',
+        type: AppToastType.success,
       );
     }
   }
@@ -53,27 +54,43 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
     );
     if (!mounted) return;
     if (result != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Company updated successfully'),
-          backgroundColor: Colors.blue,
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppToast.show(
+        context,
+        'Company updated successfully',
+        type: AppToastType.success,
       );
     }
   }
 
   Future<void> _deleteCompany(CompanyModel company) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF0D1426) : Colors.white,
+        surfaceTintColor: isDark ? const Color(0xFF0D1426) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Company'),
-        content: Text('Are you sure you want to delete ${company.name}?'),
+        title: Text(
+          'Delete Company',
+          style: TextStyle(
+            color: isDark ? const Color(0xFFEAF1FF) : const Color(0xFF0B1220),
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to delete ${company.name}?',
+          style: TextStyle(
+            color: isDark ? const Color(0xFF98A7C2) : Colors.black87,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: isDark ? const Color(0xFF98A7C2) : Colors.grey,
+              ),
+            ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -91,22 +108,17 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Company deleted successfully'),
-          backgroundColor: Colors.red, // Pale red
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppToast.show(
+        context,
+        'Company deleted successfully',
+        type: AppToastType.destructiveSoft,
       );
     } else {
-      // Show specific error message from provider
       final errorMsg = provider.errorMessage ?? "Failed to delete company";
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMsg),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppToast.show(
+        context,
+        errorMsg,
+        type: AppToastType.error,
       );
     }
   }
@@ -114,33 +126,37 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<CompanyProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFD),
+      backgroundColor: isDark ? const Color(0xFF060B16) : AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF060B16) : Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'Manage Companies',
-          style:
-              TextStyle(color: Color(0xFF1F2937), fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: isDark ? Colors.white : const Color(0xFF1F2937),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.black87, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: isDark ? Colors.white : Colors.black87, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          ThemeToggleButton(color: isDark ? Colors.white : Colors.black87),
           IconButton(
             icon: const Icon(Icons.add_circle_outline,
-                color: Color(0xFF2563EB), size: 28),
+                color: AppColors.primary, size: 28),
             onPressed: _addCompany,
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF2563EB),
+        backgroundColor: AppColors.primary,
         onPressed: _addCompany,
         icon: const Icon(Icons.add),
         label: const Text("Add New Company"),
@@ -165,6 +181,7 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -172,17 +189,19 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
           Icon(Icons.business_center_outlined,
               size: 80, color: Colors.grey.withOpacity(0.5)),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             "No companies found",
             style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.black54),
+                color: isDark ? const Color(0xFFEAF1FF) : Colors.black54),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             "Add your first company to get started",
-            style: TextStyle(color: Colors.black38),
+            style: TextStyle(
+              color: isDark ? const Color(0xFF98A7C2) : Colors.black38,
+            ),
           ),
         ],
       ),
@@ -192,6 +211,7 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
   Widget _buildCompanyCard(CompanyModel company) {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         final isCreator = company.createdBy != null &&
             auth.currentUser != null &&
             company.createdBy == auth.currentUser!.id;
@@ -199,11 +219,16 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
         // The card widget itself (without margin)
         final cardWidget = Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? const Color(0xFF0D1426) : Colors.white,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? const Color(0xFF1F2A44)
+                  : Colors.black.withOpacity(0.05),
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withOpacity(isDark ? 0.18 : 0.04),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -235,15 +260,18 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
                       width: 50,
                       height: 50,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: isDark
+                            ? const Color(0xFF18243E)
+                            : const Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.business,
-                          color: Colors.white, size: 28),
+                      child: Icon(
+                        Icons.business,
+                        color: isDark
+                            ? const Color(0xFF8FB6FF)
+                            : AppColors.primary,
+                        size: 28,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -252,24 +280,38 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
                         children: [
                           Text(
                             company.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1F2937),
+                              color: isDark
+                                  ? const Color(0xFFEAF1FF)
+                                  : const Color(0xFF1F2937),
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             company.industry ?? 'General Industry',
-                            style: const TextStyle(
-                                fontSize: 13, color: Colors.black54),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark
+                                  ? const Color(0xFF98A7C2)
+                                  : Colors.black54,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     if (isCreator)
                       PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, color: Colors.grey),
+                        color: isDark ? const Color(0xFF121A2C) : Colors.white,
+                        surfaceTintColor:
+                            isDark ? const Color(0xFF121A2C) : Colors.white,
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: isDark
+                              ? const Color(0xFF98A7C2)
+                              : Colors.grey,
+                        ),
                         onSelected: (value) {
                           if (value == 'edit') {
                             _editCompany(company);
@@ -278,23 +320,37 @@ class _CompanySelectPageState extends State<CompanySelectPage> {
                           }
                         },
                         itemBuilder: (BuildContext context) => [
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'edit',
                             child: Row(
                               children: [
-                                Icon(Icons.edit, color: Colors.blueAccent),
-                                SizedBox(width: 8),
-                                Text('Edit'),
+                                const Icon(Icons.edit, color: Colors.blueAccent),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Edit',
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? const Color(0xFFEAF1FF)
+                                        : const Color(0xFF0B1220),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'delete',
                             child: Row(
                               children: [
-                                Icon(Icons.delete, color: Colors.redAccent),
-                                SizedBox(width: 8),
-                                Text('Delete'),
+                                const Icon(Icons.delete, color: Colors.redAccent),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Delete',
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? const Color(0xFFEAF1FF)
+                                        : const Color(0xFF0B1220),
+                                  ),
+                                ),
                               ],
                             ),
                           ),

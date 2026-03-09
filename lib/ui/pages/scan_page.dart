@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import '../../bloc/card/card_provider.dart';
+import '../../core/theme/app_colors.dart';
+import '../components/app_toast.dart';
 import '../components/loading_view.dart';
+import '../components/theme_toggle_button.dart';
 import 'card_detail_page.dart';
 
 class ScanPage extends StatefulWidget {
@@ -43,15 +46,19 @@ class _ScanPageState extends State<ScanPage> {
           MaterialPageRoute(builder: (_) => CardDetailPage(card: card)),
         );
       } else {
-         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Card not found for this QR code"), backgroundColor: Colors.red),
+        AppToast.show(
+          context,
+          "Card not found for this QR code",
+          type: AppToastType.error,
         );
         setState(() => _isProcessing = false);
       }
     } catch (e) {
       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Error scanning QR code"), backgroundColor: Colors.red),
+        AppToast.show(
+          context,
+          "Error scanning QR code",
+          type: AppToastType.error,
         );
         setState(() => _isProcessing = false);
       }
@@ -60,20 +67,24 @@ class _ScanPageState extends State<ScanPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF060B16) : Colors.black,
       appBar: AppBar(
-        title: const Text('Scan QR Code'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1E3C72), Color(0xFF2A5298)],
-            ),
+        title: Text(
+          'Scan QR Code',
+          style: TextStyle(
+            color: isDark ? Colors.white : const Color(0xFF0B1220),
+            fontWeight: FontWeight.w800,
           ),
         ),
+        backgroundColor: isDark ? const Color(0xFF060B16) : Colors.white,
+        elevation: 0,
+        surfaceTintColor: isDark ? const Color(0xFF060B16) : Colors.white,
+        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black87),
+        actions: [
+          ThemeToggleButton(color: isDark ? Colors.white : Colors.black87),
+        ],
       ),
       body: Stack(
         children: [
@@ -86,8 +97,20 @@ class _ScanPageState extends State<ScanPage> {
               width: 250,
               height: 250,
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.white, width: 2),
+                border: Border.all(
+                  color: isDark ? Colors.white : const Color(0xFFDBE4F5),
+                  width: 2,
+                ),
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: isDark
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.24),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                        ),
+                      ]
+                    : null,
               ),
             ),
           ),

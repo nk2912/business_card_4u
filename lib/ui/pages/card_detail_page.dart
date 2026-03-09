@@ -3,10 +3,14 @@ import 'package:provider/provider.dart';
 
 import '../../bloc/auth/auth_provider.dart';
 import '../../bloc/card/card_provider.dart';
+import '../../core/navigation/app_navigator.dart';
 import '../../core/network/image_url.dart';
 import '../../data/models/business_card_model.dart';
 import '../../data/models/company_model.dart';
+import '../components/app_toast.dart';
 import 'add_card_page.dart';
+import 'deactivate_account_page.dart';
+import 'login_page.dart';
 
 class CardDetailPage extends StatelessWidget {
   final BusinessCardModel card;
@@ -18,36 +22,102 @@ class CardDetailPage extends StatelessWidget {
   static const _muted = Color(0xFF667085);
   static const _primary = Color(0xFF1D4ED8);
   static const _deep = Color(0xFF0F1C3F);
+
+  AlertDialog _buildActionDialog(
+    BuildContext context, {
+    required String title,
+    required String content,
+    required String confirmText,
+    required VoidCallback onConfirm,
+    bool destructive = false,
+    Widget? extraContent,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return AlertDialog(
+      backgroundColor: isDark ? const Color(0xFF0D1426) : Colors.white,
+      surfaceTintColor: isDark ? const Color(0xFF0D1426) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isDark ? const Color(0xFFEAF1FF) : _ink,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            content,
+            style: TextStyle(
+              color: isDark ? const Color(0xFF98A7C2) : _muted,
+              height: 1.45,
+            ),
+          ),
+          if (extraContent != null) ...[
+            const SizedBox(height: 16),
+            extraContent,
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(
+            'Cancel',
+            style: TextStyle(
+              color: isDark ? const Color(0xFF98A7C2) : _muted,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: onConfirm,
+          child: Text(
+            confirmText,
+            style: TextStyle(
+              color: destructive ? Colors.redAccent : _primary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   void _showToast(
     BuildContext context,
     String message, {
     bool isError = false,
-    bool isWarning = false,
+    bool isDestructiveSoft = false,
   }) {
-    final overlay = Overlay.maybeOf(context);
-    if (overlay == null) return;
-
-    final entry = OverlayEntry(
-      builder: (_) => _CardDetailToast(
-        message: message,
-        isError: isError,
-        isWarning: isWarning,
-      ),
+    AppToast.show(
+      context,
+      message,
+      type: isError
+          ? AppToastType.error
+          : isDestructiveSoft
+              ? AppToastType.destructiveSoft
+              : AppToastType.success,
     );
+  }
 
-    overlay.insert(entry);
-
-    Future.delayed(const Duration(seconds: 2)).then((_) {
-      if (entry.mounted) entry.remove();
-    });
+  Future<void> _showDeactivateAccountFlow(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const DeactivateAccountPage()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentUser = context.read<AuthProvider>().currentUser;
     final isMyCard = currentUser != null && card.user?.id == currentUser.id;
     final isSavedCard = card.cardType == 'saved_card';
     final isUserCard = card.cardType == 'user_card';
+    final isMyProfileCard = isMyCard && isUserCard;
 
     final avatarUrl =
         (card.profileImage != null && card.profileImage!.isNotEmpty)
@@ -55,7 +125,7 @@ class CardDetailPage extends StatelessWidget {
             : null;
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: isDark ? const Color(0xFF060B16) : _bg,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -77,7 +147,7 @@ class CardDetailPage extends StatelessWidget {
                   final isFriend = card.isFriend;
 
                   return _HeroPillButton(
-                    label: isFriend ? 'Remove' : 'Connect',
+                    label: isFriend ? 'Unfriend' : 'Connect',
                     icon: isFriend
                         ? Icons.person_remove_alt_1
                         : Icons.person_add_alt_1,
@@ -85,27 +155,14 @@ class CardDetailPage extends StatelessWidget {
                       if (isFriend) {
                         final confirm = await showDialog<bool>(
                           context: context,
-                          builder: (ctx) => AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            title: const Text('Remove Friend'),
-                            content: const Text(
-                              'Are you sure you want to remove this friend?',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text(
-                                  'Remove',
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ],
+                          builder: (ctx) => _buildActionDialog(
+                            ctx,
+                            title: 'Unfriend',
+                            content:
+                                'Are you sure you want to remove this friend?',
+                            confirmText: 'Unfriend',
+                            destructive: true,
+                            onConfirm: () => Navigator.pop(ctx, true),
                           ),
                         );
 
@@ -118,7 +175,7 @@ class CardDetailPage extends StatelessWidget {
                             _showToast(
                               context,
                               'Friend removed successfully',
-                              isWarning: true,
+                              isDestructiveSoft: true,
                             );
                             Navigator.pop(context);
                           } else if (context.mounted) {
@@ -153,8 +210,9 @@ class CardDetailPage extends StatelessWidget {
               padding: const EdgeInsets.only(right: 12),
               child: PopupMenuButton<String>(
                 icon: const Icon(Icons.more_horiz, color: Colors.white),
-                color: Colors.white,
-                surfaceTintColor: Colors.white,
+                color: isDark ? const Color(0xFF121A2C) : Colors.white,
+                surfaceTintColor:
+                    isDark ? const Color(0xFF121A2C) : Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
                 ),
@@ -164,80 +222,92 @@ class CardDetailPage extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                           builder: (_) => AddCardPage(card: card)),
-                    ).then((updated) {
+                    ).then((updated) async {
                       if (!context.mounted) return;
                       if (updated == true) {
-                        context.read<CardProvider>().fetchCards();
-                        Navigator.pop(context);
+                        final provider = context.read<CardProvider>();
+                        await provider.fetchCards();
+                        if (!context.mounted) return;
+
+                        final updatedIndex =
+                            provider.cards.indexWhere((c) => c.id == card.id);
+
+                        if (updatedIndex != -1) {
+                          Navigator.pushReplacement(
+                            context,
+                            PageRouteBuilder(
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
+                              pageBuilder: (_, __, ___) => CardDetailPage(
+                                card: provider.cards[updatedIndex],
+                              ),
+                            ),
+                          );
+                        }
                       }
                     });
                   }
 
-                  if (value == 'delete') {
+                    if (value == 'delete') {
+                    if (isMyProfileCard) {
+                      await _showDeactivateAccountFlow(context);
+                      return;
+                    }
+
                     final confirm = await showDialog<bool>(
                       context: context,
-                      builder: (ctx) => AlertDialog(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        title: const Text('Delete Card'),
-                        content: const Text(
-                          'Are you sure you want to delete this card?',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text(
-                              'Delete',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ],
+                      builder: (ctx) => _buildActionDialog(
+                        ctx,
+                        title: 'Delete Card',
+                        content: 'Are you sure you want to delete this card?',
+                        confirmText: 'Delete',
+                        destructive: true,
+                        onConfirm: () => Navigator.pop(ctx, true),
                       ),
                     );
 
-                    if (confirm == true && context.mounted) {
-                      final provider = context.read<CardProvider>();
+                      if (confirm == true && context.mounted) {
+                        final provider = context.read<CardProvider>();
                       final success = await provider.deleteCard(card.id);
 
-                      if (!context.mounted) return;
+                        if (!context.mounted) return;
 
-                      if (success) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              provider.deleteMessage ??
-                                  'Card deleted successfully',
-                            ),
-                            backgroundColor: Colors.redAccent.shade100,
-                          ),
-                        );
-                        Navigator.pop(context);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              provider.deleteMessage ?? 'Failed to delete card',
-                            ),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
+                        if (success) {
+                          _showToast(
+                            context,
+                            provider.deleteMessage ??
+                                'Card deleted successfully',
+                            isDestructiveSoft: true,
+                          );
+                          Navigator.pop(context);
+                        } else {
+                          _showToast(
+                            context,
+                            provider.deleteMessage ?? 'Failed to delete card',
+                            isError: true,
+                          );
+                        }
                       }
-                    }
                   }
                 },
-                itemBuilder: (_) => const [
+                itemBuilder: (_) => [
                   PopupMenuItem(
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit_outlined, color: Colors.black87),
-                        SizedBox(width: 12),
-                        Text('Edit'),
+                        Icon(Icons.edit_outlined,
+                            color: isDark
+                                ? const Color(0xFFEAF1FF)
+                                : Colors.black87),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Edit',
+                          style: TextStyle(
+                            color: isDark
+                                ? const Color(0xFFEAF1FF)
+                                : Colors.black87,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -248,7 +318,7 @@ class CardDetailPage extends StatelessWidget {
                         Icon(Icons.delete_outline, color: Colors.redAccent),
                         SizedBox(width: 12),
                         Text(
-                          'Delete',
+                          isMyProfileCard ? 'Deactivate Account' : 'Delete',
                           style: TextStyle(color: Colors.redAccent),
                         ),
                       ],
@@ -268,10 +338,10 @@ class CardDetailPage extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    const Color(0xFF09152E),
-                    const Color(0xFF173B82),
-                    _bg,
-                    _bg,
+                    isDark ? const Color(0xFF050A15) : const Color(0xFF09152E),
+                    isDark ? const Color(0xFF0D1730) : const Color(0xFF173B82),
+                    isDark ? const Color(0xFF060B16) : _bg,
+                    isDark ? const Color(0xFF060B16) : _bg,
                   ],
                   stops: const [0, .30, .30, 1],
                 ),
@@ -299,6 +369,7 @@ class CardDetailPage extends StatelessWidget {
                   avatarUrl: avatarUrl,
                   cardTypeLabel: _formatCardType(card.cardType),
                   isMyCard: isMyCard,
+                  isDark: isDark,
                 ),
                 const SizedBox(height: 16),
                 if ((card.bio ?? '').trim().isNotEmpty) ...[
@@ -356,12 +427,14 @@ class _PremiumHeroCard extends StatelessWidget {
   final String? avatarUrl;
   final String cardTypeLabel;
   final bool isMyCard;
+  final bool isDark;
 
   const _PremiumHeroCard({
     required this.card,
     required this.avatarUrl,
     required this.cardTypeLabel,
     required this.isMyCard,
+    required this.isDark,
   });
 
   @override
@@ -380,22 +453,43 @@ class _PremiumHeroCard extends StatelessWidget {
             : isMyCard
                 ? 'Owner'
                 : 'Open';
+    final heroGradient = isDark
+        ? const [
+            Color(0xFF070D19),
+            Color(0xFF0D1630),
+            Color(0xFF172443),
+            Color(0xFF0A1020),
+          ]
+        : const [
+            Color(0xFF23408C),
+            Color(0xFF315CC4),
+            Color(0xFF4A8BFF),
+            Color(0xFF1C2F68),
+          ];
+    final roleColor = isDark ? const Color(0xFFA9B6D1) : const Color(0xFFE6EEFF);
+    final companyColor =
+        isDark ? const Color(0xFFD8E4FF) : Colors.white;
+    final titleColor = Colors.white;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF102247), Color(0xFF20499D), Color(0xFF0A142A)],
+          stops: const [0, .3, .68, 1],
+          colors: heroGradient,
         ),
-        border: Border.all(color: Colors.white.withOpacity(.14)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF25304B) : const Color(0x8099B8FF),
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF102247).withOpacity(.30),
-            blurRadius: 28,
-            offset: const Offset(0, 18),
+            color: (isDark ? Colors.black : const Color(0xFF0D224A))
+                .withOpacity(isDark ? .34 : .12),
+            blurRadius: isDark ? 26 : 20,
+            offset: const Offset(0, 16),
           ),
         ],
       ),
@@ -409,7 +503,43 @@ class _PremiumHeroCard extends StatelessWidget {
               height: 110,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(.08),
+                color: isDark
+                    ? Colors.white.withOpacity(.08)
+                    : Colors.white.withOpacity(.18),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -58,
+            left: -26,
+            child: Container(
+              width: 170,
+              height: 170,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [Color(0x335EF3FF), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 24,
+            left: 96,
+            right: -30,
+            child: Transform.rotate(
+              angle: -.3,
+              child: Container(
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withOpacity(0),
+                        Colors.white.withOpacity(isDark ? .22 : .26),
+                        Colors.white.withOpacity(0),
+                      ],
+                    ),
+                ),
               ),
             ),
           ),
@@ -427,27 +557,43 @@ class _PremiumHeroCard extends StatelessWidget {
                       padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border:
-                            Border.all(color: Colors.white.withOpacity(.26)),
-                      ),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withOpacity(isDark ? .95 : 1),
+                              (isDark
+                                      ? const Color(0xFF6D7BFF)
+                                      : const Color(0xFF7DD3FC))
+                                  .withOpacity(.55),
+                            ],
+                          ),
+                        ),
                       child: ClipOval(
                         child: avatarUrl == null
                             ? DecoratedBox(
-                                decoration: const BoxDecoration(
+                                decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
-                                    colors: [
-                                      Color(0xFF3B82F6),
-                                      Color(0xFF1D4ED8),
-                                    ],
+                                    colors: isDark
+                                        ? const [
+                                            Color(0xFF162544),
+                                            Color(0xFF0D1630),
+                                          ]
+                                        : const [
+                                            Color(0xFF58D7FF),
+                                            Color(0xFF2454E8),
+                                          ],
                                   ),
                                 ),
                                 child: Center(
                                   child: Text(
                                     firstLetter,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? const Color(0xFFDDE9FF)
+                                          : Colors.white,
                                       fontWeight: FontWeight.w900,
                                       fontSize: 28,
                                     ),
@@ -458,21 +604,28 @@ class _PremiumHeroCard extends StatelessWidget {
                                 avatarUrl!,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => DecoratedBox(
-                                  decoration: const BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        Color(0xFF3B82F6),
-                                        Color(0xFF1D4ED8),
-                                      ],
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: isDark
+                                            ? const [
+                                                Color(0xFF162544),
+                                                Color(0xFF0D1630),
+                                              ]
+                                            : const [
+                                                Color(0xFF58D7FF),
+                                                Color(0xFF2454E8),
+                                              ],
+                                      ),
                                     ),
-                                  ),
                                   child: Center(
                                     child: Text(
                                       firstLetter,
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? const Color(0xFFDDE9FF)
+                                            : Colors.white,
                                         fontWeight: FontWeight.w900,
                                         fontSize: 28,
                                       ),
@@ -521,8 +674,8 @@ class _PremiumHeroCard extends StatelessWidget {
                         const SizedBox(height: 12),
                         Text(
                           card.fullName,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: titleColor,
                             fontWeight: FontWeight.w900,
                             fontSize: 26,
                             height: 1.05,
@@ -533,28 +686,28 @@ class _PremiumHeroCard extends StatelessWidget {
                           card.position.trim().isEmpty
                               ? 'Professional profile'
                               : card.position,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(.78),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            height: 1.45,
+                            style: TextStyle(
+                              color: roleColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              height: 1.45,
                           ),
                         ),
                         if (companyName != null && companyName.isNotEmpty) ...[
                           const SizedBox(height: 10),
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.business_center_outlined,
                                 size: 17,
-                                color: Color(0xFFE7EEFF),
+                                color: companyColor,
                               ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   companyName,
-                                  style: const TextStyle(
-                                    color: Color(0xFFE7EEFF),
+                                  style: TextStyle(
+                                    color: companyColor,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -572,9 +725,15 @@ class _PremiumHeroCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(.10),
+                  color: isDark
+                      ? const Color(0xFF10192C).withOpacity(.94)
+                      : Colors.white.withOpacity(.16),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(.12)),
+                  border: Border.all(
+                    color: isDark
+                        ? const Color(0xFF27324D)
+                        : Colors.white.withOpacity(.14),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -683,14 +842,34 @@ class _HeroBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: accent ? const Color(0x22C6A55C) : Colors.white.withOpacity(.10),
+        color: accent
+            ? (isDark ? const Color(0x223AA9FF) : const Color(0x22C6A55C))
+            : (isDark
+                ? const Color(0xFF11192C).withOpacity(.92)
+                : Colors.white.withOpacity(.10)),
+        gradient: accent
+            ? null
+            : LinearGradient(
+                colors: [
+                  isDark
+                      ? const Color(0xFF202B45).withOpacity(.95)
+                      : Colors.white.withOpacity(.16),
+                  isDark
+                      ? const Color(0xFF121A2F).withOpacity(.95)
+                      : Colors.white.withOpacity(.08),
+                ],
+              ),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color:
-              accent ? const Color(0x44E4C486) : Colors.white.withOpacity(.12),
+          color: accent
+              ? (isDark ? const Color(0x665ED7FF) : const Color(0x44E4C486))
+              : (isDark
+                  ? const Color(0xFF2B3754)
+                  : Colors.white.withOpacity(.12)),
         ),
       ),
       child: Row(
@@ -699,13 +878,17 @@ class _HeroBadge extends StatelessWidget {
           Icon(
             icon,
             size: 13,
-            color: accent ? const Color(0xFFFFE2A8) : Colors.white,
+            color: accent
+                ? (isDark ? const Color(0xFFB8EEFF) : const Color(0xFFFFE2A8))
+                : Colors.white,
           ),
           const SizedBox(width: 6),
           Text(
             text,
             style: TextStyle(
-              color: accent ? const Color(0xFFFFF4DB) : Colors.white,
+              color: accent
+                  ? (isDark ? const Color(0xFFE2F8FF) : const Color(0xFFFFF4DB))
+                  : Colors.white,
               fontWeight: FontWeight.w800,
               fontSize: 11.5,
             ),
@@ -798,15 +981,18 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0D1426) : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE7ECF5)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1F2A44) : const Color(0xFFE7ECF5),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.22 : 0.05),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -822,13 +1008,19 @@ class _SectionCard extends StatelessWidget {
                 height: 44,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFFEEF4FF), Color(0xFFDCE8FF)],
+                    colors: isDark
+                        ? const [Color(0xFF18243E), Color(0xFF213056)]
+                        : const [Color(0xFFEEF4FF), Color(0xFFDCE8FF)],
                   ),
                 ),
-                child: Icon(icon, color: CardDetailPage._primary),
+                child: Icon(
+                  icon,
+                  color:
+                      isDark ? const Color(0xFF8FB6FF) : CardDetailPage._primary,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -837,8 +1029,10 @@ class _SectionCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: CardDetailPage._ink,
+                      style: TextStyle(
+                        color: isDark
+                            ? const Color(0xFFEAF1FF)
+                            : CardDetailPage._ink,
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
                       ),
@@ -847,8 +1041,10 @@ class _SectionCard extends StatelessWidget {
                       const SizedBox(height: 3),
                       Text(
                         subtitle!,
-                        style: const TextStyle(
-                          color: CardDetailPage._muted,
+                        style: TextStyle(
+                          color: isDark
+                              ? const Color(0xFF98A7C2)
+                              : CardDetailPage._muted,
                           fontWeight: FontWeight.w600,
                           fontSize: 12.5,
                         ),
@@ -884,18 +1080,21 @@ class _ContactList extends StatelessWidget {
     ];
 
     if (items.isEmpty) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFD),
+          color: isDark ? const Color(0xFF10182B) : const Color(0xFFF8FAFD),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE6EBF3)),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1E2943) : const Color(0xFFE6EBF3),
+          ),
         ),
-        child: const Text(
+        child: Text(
           'No contact details available.',
           style: TextStyle(
-            color: CardDetailPage._muted,
+            color: isDark ? const Color(0xFF98A7C2) : CardDetailPage._muted,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -919,13 +1118,16 @@ class _ContactTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFD),
+        color: isDark ? const Color(0xFF10182B) : const Color(0xFFF8FAFD),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE7ECF5)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2943) : const Color(0xFFE7ECF5),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -933,14 +1135,16 @@ class _ContactTile extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? const [Color(0xFF1B2A50), Color(0xFF355CBE)]
+                      : const [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                ),
               ),
-            ),
             child: Icon(icon, size: 18, color: Colors.white),
           ),
           const SizedBox(width: 12),
@@ -950,8 +1154,10 @@ class _ContactTile extends StatelessWidget {
               children: [
                 Text(
                   label.toUpperCase(),
-                  style: const TextStyle(
-                    color: CardDetailPage._muted,
+                  style: TextStyle(
+                    color: isDark
+                        ? const Color(0xFF98A7C2)
+                        : CardDetailPage._muted,
                     fontWeight: FontWeight.w800,
                     fontSize: 11,
                     letterSpacing: .9,
@@ -960,8 +1166,10 @@ class _ContactTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: CardDetailPage._ink,
+                  style: TextStyle(
+                    color: isDark
+                        ? const Color(0xFFEAF1FF)
+                        : CardDetailPage._ink,
                     fontWeight: FontWeight.w700,
                     height: 1.4,
                   ),
@@ -983,16 +1191,21 @@ class _CompanyInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFF9FBFF), Color(0xFFF2F6FE)],
+          colors: isDark
+              ? const [Color(0xFF10192C), Color(0xFF0D1426)]
+              : const [Color(0xFFF9FBFF), Color(0xFFF2F6FE)],
         ),
-        border: Border.all(color: const Color(0xFFDDE6F4)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1F2A44) : const Color(0xFFDDE6F4),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1022,8 +1235,10 @@ class _CompanyInfo extends StatelessWidget {
                   children: [
                     Text(
                       company.name,
-                      style: const TextStyle(
-                        color: CardDetailPage._ink,
+                      style: TextStyle(
+                        color: isDark
+                            ? const Color(0xFFEAF1FF)
+                            : CardDetailPage._ink,
                         fontWeight: FontWeight.w900,
                         fontSize: 17,
                       ),
@@ -1094,6 +1309,7 @@ class _CompanyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -1104,7 +1320,9 @@ class _CompanyRow extends StatelessWidget {
             child: Icon(
               icon,
               size: 18,
-              color: CardDetailPage._primary,
+              color: isDark
+                  ? const Color(0xFF8FB6FF)
+                  : CardDetailPage._primary,
             ),
           ),
           const SizedBox(width: 10),
@@ -1112,8 +1330,10 @@ class _CompanyRow extends StatelessWidget {
             width: 72,
             child: Text(
               label,
-              style: const TextStyle(
-                color: CardDetailPage._muted,
+              style: TextStyle(
+                color: isDark
+                    ? const Color(0xFF98A7C2)
+                    : CardDetailPage._muted,
                 fontWeight: FontWeight.w800,
                 fontSize: 12,
               ),
@@ -1122,8 +1342,10 @@ class _CompanyRow extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                color: CardDetailPage._ink,
+              style: TextStyle(
+                color: isDark
+                    ? const Color(0xFFEAF1FF)
+                    : CardDetailPage._ink,
                 fontWeight: FontWeight.w700,
                 height: 1.42,
               ),
@@ -1142,84 +1364,22 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF131D31) : Colors.white,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFD8E2F2)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF24304B) : const Color(0xFFD8E2F2),
+        ),
       ),
       child: Text(
         text,
-        style: const TextStyle(
-          color: CardDetailPage._deep,
+        style: TextStyle(
+          color: isDark ? const Color(0xFFD8E4FF) : CardDetailPage._deep,
           fontWeight: FontWeight.w800,
           fontSize: 12,
-        ),
-      ),
-    );
-  }
-}
-
-class _CardDetailToast extends StatelessWidget {
-  final String message;
-  final bool isError;
-  final bool isWarning;
-
-  const _CardDetailToast({
-    required this.message,
-    required this.isError,
-    this.isWarning = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    const successBg = Color(0xFFDCEBFF);
-    const successText = Color(0xFF1E3A8A);
-    const warningBg = Color(0xFFFFEDD5);
-    const warningText = Color(0xFF9A3412);
-    const errorBg = Color(0xFFFEE2E2);
-    const errorText = Color(0xFFB42318);
-
-    return SafeArea(
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              decoration: BoxDecoration(
-                color: isError
-                    ? errorBg
-                    : isWarning
-                        ? warningBg
-                        : successBg,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(.08),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isError
-                      ? errorText
-                      : isWarning
-                          ? warningText
-                          : successText,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );

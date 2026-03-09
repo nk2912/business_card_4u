@@ -23,6 +23,9 @@ abstract class AuthApi {
   /// ================= LOGOUT =================
   Future<void> logout();
 
+  /// ================= DEACTIVATE ACCOUNT =================
+  Future<String> deactivateAccount(String password);
+
   /// ================= GET PROFILE =================
   Future<Map<String, dynamic>> getProfile();
 }

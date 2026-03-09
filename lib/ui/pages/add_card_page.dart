@@ -4,9 +4,14 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../bloc/card/card_provider.dart';
+import '../../core/network/image_url.dart';
 import '../../data/models/business_card_model.dart';
 import '../../data/models/company_model.dart';
+import '../../core/theme/app_colors.dart';
+import '../components/app_primary_button.dart';
+import '../components/app_toast.dart';
 import '../components/loading_view.dart';
+import '../components/theme_toggle_button.dart';
 import 'company_select_page.dart';
 
 class AddCardPage extends StatefulWidget {
@@ -36,21 +41,11 @@ class _AddCardPageState extends State<AddCardPage> {
   bool get isEditing => widget.card != null;
 
   void _showToast(String message, {bool isError = false}) {
-    final overlay = Overlay.of(context);
-    final entry = OverlayEntry(
-      builder: (_) => _CardStatusToast(
-        message: message,
-        isError: isError,
-      ),
+    AppToast.show(
+      context,
+      message,
+      type: isError ? AppToastType.error : AppToastType.success,
     );
-
-    overlay.insert(entry);
-
-    Future.delayed(const Duration(seconds: 2)).then((_) {
-      if (entry.mounted) {
-        entry.remove();
-      }
-    });
   }
 
   @override
@@ -116,6 +111,9 @@ class _AddCardPageState extends State<AddCardPage> {
       });
     }
   }
+
+  bool get _hasRemoteProfileImage =>
+      ImageUrl.resolve(_profileImageCtrl.text) != null;
 
   List<String> _splitToList(String input) {
     return input
@@ -207,25 +205,27 @@ class _AddCardPageState extends State<AddCardPage> {
   @override
   Widget build(BuildContext context) {
     final isCreating = context.watch<CardProvider>().isCreating;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFD),
+      backgroundColor: isDark ? const Color(0xFF060B16) : const Color(0xFFF8FAFD),
       appBar: AppBar(
         title: Text(isEditing ? 'Edit Business Card' : 'Add Business Card',
-            style: const TextStyle(
-                color: Colors.black87, fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.white,
+            style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600)),
+        backgroundColor: isDark ? const Color(0xFF060B16) : Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black87),
         actions: isEditing
             ? [
+                ThemeToggleButton(color: isDark ? Colors.white : Colors.black87),
                 IconButton(
                   onPressed: isCreating ? null : _submit,
                   icon: Icon(
                     Icons.save_outlined,
-                    color: isCreating
-                        ? const Color(0xFF94A3B8)
-                        : const Color(0xFF2563EB),
+                          color: isCreating
+                              ? const Color(0xFF94A3B8)
+                              : AppColors.primary,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -255,33 +255,40 @@ class _AddCardPageState extends State<AddCardPage> {
                             height: 100,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.grey[200],
+                              color: isDark
+                                  ? const Color(0xFF10182B)
+                                  : Colors.grey[200],
                               border: Border.all(
-                                  color: Colors.grey[300]!, width: 2),
-                              image: _pickedImageBytes != null
-                                  ? DecorationImage(
-                                      image: MemoryImage(_pickedImageBytes!),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : (_profileImageCtrl.text.isNotEmpty &&
-                                          Uri.tryParse(_profileImageCtrl.text)
-                                                  ?.isAbsolute ==
-                                              true
-                                      ? DecorationImage(
-                                          image: NetworkImage(
-                                              _profileImageCtrl.text),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : null),
+                                  color: isDark
+                                      ? const Color(0xFF24304B)
+                                      : Colors.grey[300]!,
+                                  width: 2),
                             ),
-                            child: (_pickedImageBytes == null &&
-                                    (_profileImageCtrl.text.isEmpty ||
-                                        Uri.tryParse(_profileImageCtrl.text)
-                                                ?.isAbsolute !=
-                                            true))
-                                ? const Icon(Icons.person,
-                                    size: 50, color: Colors.grey)
-                                : null,
+                            clipBehavior: Clip.antiAlias,
+                            child: _pickedImageBytes != null
+                                ? Image.memory(
+                                    _pickedImageBytes!,
+                                    fit: BoxFit.cover,
+                                  )
+                                : _hasRemoteProfileImage
+                                    ? Image.network(
+                                        ImageUrl.resolve(_profileImageCtrl.text)!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Icon(
+                                          Icons.person,
+                                          size: 50,
+                                          color: isDark
+                                              ? const Color(0xFF98A7C2)
+                                              : Colors.grey,
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.person,
+                                        size: 50,
+                                        color: isDark
+                                            ? const Color(0xFF98A7C2)
+                                            : Colors.grey,
+                                      ),
                           ),
                           Positioned(
                             bottom: 0,
@@ -363,28 +370,13 @@ class _AddCardPageState extends State<AddCardPage> {
                   // ),
                   const SizedBox(height: 32),
                   if (!isEditing)
-                    SizedBox(
-                      width: double.infinity,
+                    AppPrimaryButton(
+                      text: 'Create Card',
+                      loading: isCreating,
+                      onPressed: isCreating ? null : _submit,
                       height: 50,
-                      child: ElevatedButton(
-                        onPressed: isCreating ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 4,
-                          shadowColor: const Color(0xFF2563EB).withOpacity(0.4),
-                        ),
-                        child: const Text(
-                          'Create Card',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      fontSize: 16,
                     ),
                   const SizedBox(height: 24),
                 ],
@@ -393,7 +385,7 @@ class _AddCardPageState extends State<AddCardPage> {
           ),
           if (isCreating)
             Container(
-              color: Colors.white.withOpacity(0.5),
+              color: (isDark ? Colors.black : Colors.white).withOpacity(0.5),
               child: const Center(child: LoadingView(size: 96)),
             ),
         ],
@@ -402,12 +394,13 @@ class _AddCardPageState extends State<AddCardPage> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF1F2937),
+        color: isDark ? const Color(0xFFEAF1FF) : const Color(0xFF1F2937),
       ),
     );
   }
@@ -420,13 +413,17 @@ class _AddCardPageState extends State<AddCardPage> {
     String? Function(String?)? validator,
     int maxLines = 1,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0D1426) : Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1F2A44) : Colors.transparent,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withOpacity(isDark ? 0.16 : 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -439,33 +436,41 @@ class _AddCardPageState extends State<AddCardPage> {
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          prefixIcon: icon != null ? Icon(icon, color: Colors.grey[400]) : null,
+          prefixIcon: icon != null
+              ? Icon(icon, color: isDark ? const Color(0xFF98A7C2) : Colors.grey[400])
+              : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: isDark ? const Color(0xFF0D1426) : Colors.white,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+        style: TextStyle(
+          color: isDark ? const Color(0xFFEAF1FF) : Colors.black87,
         ),
       ),
     );
   }
 
   Widget _buildCompanySelector() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: _pickCompany,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF0D1426) : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1F2A44) : Colors.grey[200]!,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withOpacity(isDark ? 0.16 : 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -476,21 +481,26 @@ class _AddCardPageState extends State<AddCardPage> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
+                color: isDark ? const Color(0xFF18243E) : const Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.business, color: Color(0xFF2563EB)),
+              child: Icon(
+                Icons.business,
+                color: isDark ? const Color(0xFF8FB6FF) : const Color(0xFF2563EB),
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     "Selected Company",
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey,
+                      color: isDark
+                          ? const Color(0xFF98A7C2)
+                          : Colors.grey,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -501,68 +511,21 @@ class _AddCardPageState extends State<AddCardPage> {
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: _selectedCompanyName != null
-                          ? Colors.black87
+                          ? (isDark ? const Color(0xFFEAF1FF) : Colors.black87)
                           : Colors.grey[400],
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CardStatusToast extends StatelessWidget {
-  final String message;
-  final bool isError;
-
-  const _CardStatusToast({
-    required this.message,
-    required this.isError,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    const successBg = Color(0xFFDCEBFF);
-    const successText = Color(0xFF1E3A8A);
-    const errorBg = Color(0xFFFEE2E2);
-    const errorText = Color(0xFFB42318);
-
-    return SafeArea(
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              decoration: BoxDecoration(
-                color: isError ? errorBg : successBg,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(.08),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isError ? errorText : successText,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: isDark
+                  ? const Color(0xFF98A7C2)
+                  : Colors.grey[400],
             ),
-          ),
+          ],
         ),
       ),
     );

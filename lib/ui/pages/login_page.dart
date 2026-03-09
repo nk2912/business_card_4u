@@ -3,11 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../bloc/auth/auth_provider.dart';
+import '../../core/theme/app_colors.dart';
+import '../components/app_primary_button.dart';
+import '../components/app_toast.dart';
 import '../components/loading_view.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final String? initialMessage;
+
+  const LoginPage({super.key, this.initialMessage});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -20,28 +25,7 @@ class _LoginPageState extends State<LoginPage> {
   String? _lastShownMessage;
 
   void _showInfoMessage(String message) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: Color(0xFF1E3A8A),
-            fontWeight: FontWeight.w700,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        backgroundColor: const Color(0xFFDCEBFF),
-        behavior: SnackBarBehavior.floating,
-        elevation: 0,
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: Color(0xFFBFDBFE)),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    AppToast.show(context, message, type: AppToastType.info);
   }
 
   @override
@@ -52,9 +36,20 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.initialMessage != null && widget.initialMessage!.trim().isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _lastShownMessage = widget.initialMessage;
+        _showInfoMessage(widget.initialMessage!);
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final theme = Theme.of(context);
     final pendingMessage = auth.pendingMessage;
 
     if (pendingMessage != null && pendingMessage != _lastShownMessage) {
@@ -69,11 +64,25 @@ class _LoginPageState extends State<LoginPage> {
       _lastShownMessage = null;
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
-      resizeToAvoidBottomInset: true,
-      body: Stack(
-        children: [
+    return Theme(
+      data: Theme.of(context).copyWith(
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: AppColors.surfaceSoft,
+        colorScheme: Theme.of(context).colorScheme.copyWith(
+              brightness: Brightness.light,
+              surface: Colors.white,
+              onSurface: const Color(0xFF0B1220),
+            ),
+        textTheme: Theme.of(context).textTheme.apply(
+              bodyColor: const Color(0xFF0B1220),
+              displayColor: const Color(0xFF0B1220),
+            ),
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.surfaceSoft,
+        resizeToAvoidBottomInset: true,
+        body: Stack(
+          children: [
           /// ================= MAIN CONTENT =================
           SingleChildScrollView(
             child: Column(
@@ -92,16 +101,16 @@ class _LoginPageState extends State<LoginPage> {
                         RichText(
                           text: TextSpan(
                             text: 'businessCard',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: theme.textTheme.bodyLarge!.color,
+                              color: Color(0xFF0B1220),
                             ),
                             children: const [
                               TextSpan(
                                 text: '4U',
                                 style: TextStyle(
-                                  color: Colors.blue,
+                                  color: AppColors.primary,
                                 ),
                               ),
                             ],
@@ -156,44 +165,28 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       const SizedBox(height: 28),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            elevation: 0,
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(26),
-                            ),
-                          ),
-                          onPressed: auth.isLoading
-                              ? null
-                              : () async {
-                                  final success =
-                                      await context.read<AuthProvider>().login(
-                                            _emailController.text.trim(),
-                                            _passwordController.text.trim(),
-                                          );
+                      AppPrimaryButton(
+                        text: 'Log In',
+                        loading: auth.isLoading,
+                        onPressed: auth.isLoading
+                            ? null
+                            : () async {
+                                final success =
+                                    await context.read<AuthProvider>().login(
+                                          _emailController.text.trim(),
+                                          _passwordController.text.trim(),
+                                        );
 
-                                  if (!success && context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content:
-                                            Text('Invalid email or password'),
-                                      ),
-                                    );
-                                  }
-                                },
-                          child: const Text(
-                            'Log In',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                                if (!success && context.mounted) {
+                                  AppToast.show(
+                                    context,
+                                    'Invalid email or password',
+                                    type: AppToastType.error,
+                                  );
+                                }
+                              },
+                        height: 52,
+                        borderRadius: BorderRadius.circular(26),
                       ),
                       const SizedBox(height: 16),
                       TextButton(
@@ -210,7 +203,10 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 30),
                       Text(
                         'Developed by Asia Brightway',
-                        style: theme.textTheme.bodySmall,
+                        style: const TextStyle(
+                          color: Color(0xFF5B6473),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       const SizedBox(height: 40),
                     ],
@@ -243,7 +239,8 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -258,9 +255,14 @@ class _LoginPageState extends State<LoginPage> {
     return TextFormField(
       controller: controller,
       obscureText: obscure,
+      style: const TextStyle(
+        color: Color(0xFF0B1220),
+        fontWeight: FontWeight.w600,
+      ),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon),
+        labelStyle: const TextStyle(color: Color(0xFF5B6473)),
+        prefixIcon: Icon(icon, color: const Color(0xFF5B6473)),
         suffixIcon: suffix,
         filled: true,
         fillColor: Colors.white,
@@ -270,7 +272,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
     );

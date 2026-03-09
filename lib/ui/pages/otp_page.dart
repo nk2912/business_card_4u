@@ -5,7 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../bloc/auth/auth_provider.dart';
+import '../../core/theme/app_colors.dart';
+import '../components/app_primary_button.dart';
+import '../components/app_toast.dart';
 import '../components/loading_view.dart';
+import '../components/theme_toggle_button.dart';
 import 'complete_register_page.dart';
 
 class OtpPage extends StatefulWidget {
@@ -50,28 +54,10 @@ class _OtpPageState extends State<OtpPage> {
   }
 
   void _showMessage(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: TextStyle(
-            color: isError ? Colors.white : const Color(0xFF1E3A8A),
-            fontWeight: FontWeight.w700,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        backgroundColor: isError ? const Color(0xFFD64545) : const Color(0xFFDCEBFF),
-        behavior: SnackBarBehavior.floating,
-        elevation: 0,
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(
-            color: isError ? const Color(0xFFF87171) : const Color(0xFFBFDBFE),
-          ),
-        ),
-      ),
+    AppToast.show(
+      context,
+      message,
+      type: isError ? AppToastType.error : AppToastType.success,
     );
   }
 
@@ -132,7 +118,7 @@ class _OtpPageState extends State<OtpPage> {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE9EDF4),
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           const _PremiumBackground(),
@@ -155,6 +141,8 @@ class _OtpPageState extends State<OtpPage> {
                           onTap: () => Navigator.pop(context),
                         ),
                         const Spacer(),
+                        const ThemeToggleButton(color: Colors.white),
+                        const SizedBox(width: 8),
                         _TimerPill(
                           timeText: _formattedTime,
                           isExpired: _secondsRemaining == 0,
@@ -226,10 +214,13 @@ class _OtpPageState extends State<OtpPage> {
                           const SizedBox(height: 22),
 
                           // Verify button
-                          _GradientButton(
+                          AppPrimaryButton(
                             text: "Verify OTP",
                             loading: auth.isLoading,
                             onPressed: auth.isLoading ? null : _verifyOtp,
+                            height: 54,
+                            borderRadius: BorderRadius.circular(18),
+                            fontSize: 15.5,
                           ),
 
                           const SizedBox(height: 12),
@@ -308,7 +299,7 @@ class _PremiumBackground extends StatelessWidget {
           left: -60,
           child: _BlurBlob(
             size: 260,
-            color: const Color(0xFF1E3C72).withOpacity(.22),
+            color: AppColors.secondary.withOpacity(.22),
           ),
         ),
         Positioned(
@@ -316,7 +307,7 @@ class _PremiumBackground extends StatelessWidget {
           right: -80,
           child: _BlurBlob(
             size: 320,
-            color: const Color(0xFF2A5298).withOpacity(.18),
+            color: AppColors.secondaryLight.withOpacity(.18),
           ),
         ),
         Positioned(
@@ -432,14 +423,14 @@ class _TimerPill extends StatelessWidget {
           Icon(
             Icons.timer_outlined,
             size: 18,
-            color: isExpired ? const Color(0xFFD64545) : const Color(0xFF1E3C72),
+            color: isExpired ? AppColors.errorBg : AppColors.secondary,
           ),
           const SizedBox(width: 8),
           Text(
             timeText,
             style: TextStyle(
               fontWeight: FontWeight.w800,
-              color: isExpired ? const Color(0xFFD64545) : const Color(0xFF1E3C72),
+              color: isExpired ? AppColors.errorBg : AppColors.secondary,
             ),
           ),
         ],
@@ -448,60 +439,6 @@ class _TimerPill extends StatelessWidget {
   }
 }
 
-class _GradientButton extends StatelessWidget {
-  final String text;
-  final bool loading;
-  final VoidCallback? onPressed;
-
-  const _GradientButton({
-    required this.text,
-    required this.loading,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 54,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1E3C72), Color(0xFF2A5298)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(.14),
-              blurRadius: 18,
-              offset: const Offset(0, 12),
-            ),
-          ],
-        ),
-        child: ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          ),
-          child: loading
-              ? const LoadingView(size: 22)
-              : Text(
-                  text,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15.5,
-                    letterSpacing: .2,
-                  ),
-                ),
-        ),
-      ),
-    );
-  }
-}
 
 class _LoadingGlassOverlay extends StatelessWidget {
   const _LoadingGlassOverlay();
@@ -625,7 +562,7 @@ class _OtpPinFieldState extends State<_OtpPinField> {
                   color: Colors.white.withOpacity(.85),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isActive ? const Color(0xFF1E3C72) : Colors.black.withOpacity(.10),
+                    color: isActive ? AppColors.secondary : Colors.black.withOpacity(.10),
                     width: isActive ? 1.6 : 1,
                   ),
                   boxShadow: [

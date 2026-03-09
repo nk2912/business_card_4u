@@ -197,6 +197,49 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<AuthActionResult> deactivateAccount(String password) async {
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final message = await _api.deactivateAccount(password);
+      return AuthActionResult(success: true, message: message);
+    } catch (e) {
+      final message = e.toString().replaceFirst('Exception: ', '').trim();
+      return AuthActionResult(
+        success: false,
+        message: message.isEmpty
+            ? 'Failed to deactivate account'
+            : message,
+      );
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> completeDeactivatedLogout(String message) async {
+    await TokenStorage.clear();
+    isLoggedIn = false;
+    currentUser = null;
+    pendingMessage = message;
+    notifyListeners();
+  }
+
+  Future<void> clearSessionSilently() async {
+    await TokenStorage.clear();
+    isLoggedIn = false;
+    currentUser = null;
+    pendingMessage = null;
+  }
+
+  Future<void> prepareDeactivatedSession(String message) async {
+    await TokenStorage.clear();
+    isLoggedIn = false;
+    currentUser = null;
+    pendingMessage = message;
+  }
+
   String? consumePendingMessage() {
     final message = pendingMessage;
     pendingMessage = null;

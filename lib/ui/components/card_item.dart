@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/network/image_url.dart';
+import '../../core/theme/app_colors.dart';
 import '../../bloc/card/card_provider.dart';
 import '../../data/models/business_card_model.dart';
+import '../components/app_toast.dart';
 import '../pages/card_detail_page.dart';
 
 class CardItem extends StatefulWidget {
@@ -19,21 +21,11 @@ class _CardItemState extends State<CardItem> {
   late String _friendRequestStatus;
 
   void _showToast(String message, {bool isError = false}) {
-    final overlay = Overlay.of(context);
-    final entry = OverlayEntry(
-      builder: (_) => _FriendRequestToast(
-        message: message,
-        isError: isError,
-      ),
+    AppToast.show(
+      context,
+      message,
+      type: isError ? AppToastType.error : AppToastType.success,
     );
-
-    overlay.insert(entry);
-
-    Future.delayed(const Duration(seconds: 2)).then((_) {
-      if (entry.mounted) {
-        entry.remove();
-      }
-    });
   }
 
   @override
@@ -58,157 +50,309 @@ class _CardItemState extends State<CardItem> {
   Widget build(BuildContext context) {
     final canSendRequest =
         widget.card.cardType == 'user_card' && !_isFriend && _friendRequestStatus == 'none';
+    final hasProfileImage =
+        widget.card.profileImage != null && widget.card.profileImage!.isNotEmpty;
+    final avatarUrl =
+        hasProfileImage ? ImageUrl.resolve(widget.card.profileImage!) : null;
+    final firstLetter = widget.card.fullName.isNotEmpty
+        ? widget.card.fullName[0].toUpperCase()
+        : "";
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardGradient = isDark
+        ? const [
+            Color(0xFF09101D),
+            Color(0xFF111B31),
+            Color(0xFF1A2744),
+            Color(0xFF0A101A),
+          ]
+        : const [
+            Color(0xFF23408C),
+            Color(0xFF315CC4),
+            Color(0xFF4A8BFF),
+            Color(0xFF1C2F68),
+          ];
+    final highlightColor = isDark
+        ? const Color(0x448C7DFF)
+        : const Color(0x3358A6FF);
+    final infoPanelColor = isDark
+        ? Colors.white.withOpacity(.06)
+        : Colors.white.withOpacity(.16);
+    final mutedText = isDark
+        ? const Color(0xFF9EACC7)
+        : const Color(0xFFE6EEFF);
+    final accentText =
+        isDark ? const Color(0xFFB6C8FF) : const Color(0xFFCFE3FF);
+    final titleColor = isDark ? Colors.white : Colors.white;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: const LinearGradient(
+        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
+          stops: const [0, .34, .72, 1],
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF1E3C72),
-            Color(0xFF2A5298),
-          ],
+          colors: cardGradient,
+        ),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(.12)
+              : const Color(0x8099B8FF),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.2),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          )
+            color: (isDark ? Colors.black : const Color(0xFF122B61))
+                .withOpacity(isDark ? .28 : .12),
+            blurRadius: isDark ? 28 : 20,
+            offset: const Offset(0, 14),
+          ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(28),
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => CardDetailPage(card: widget.card)),
             );
           },
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Hero(
-                      tag: 'avatar_${widget.card.id}_${widget.card.fullName}',
-                      child: CircleAvatar(
-                        radius: 26,
-                        backgroundColor: Colors.white.withOpacity(.15),
-                        backgroundImage: (widget.card.profileImage != null &&
-                                widget.card.profileImage!.isNotEmpty)
-                            ? NetworkImage(ImageUrl.resolve(widget.card.profileImage!)!)
-                            : null,
-                        child: (widget.card.profileImage == null ||
-                                widget.card.profileImage!.isEmpty)
-                            ? Text(
-                                widget.card.fullName.isNotEmpty
-                                    ? widget.card.fullName[0].toUpperCase()
-                                    : "",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.card.fullName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            widget.card.position,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                            ),
-                          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: -48,
+                right: -18,
+                child: Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isDark
+                        ? Colors.white.withOpacity(.08)
+                        : Colors.white.withOpacity(.18),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: -36,
+                left: -24,
+                child: Container(
+                  width: 128,
+                  height: 128,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: highlightColor,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 18,
+                left: 96,
+                right: -30,
+                child: Transform.rotate(
+                  angle: -.28,
+                  child: Container(
+                    height: 64,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0),
+                          Colors.white.withOpacity(isDark ? .22 : .26),
+                          Colors.white.withOpacity(0),
                         ],
                       ),
                     ),
-                    if (canSendRequest)
-                      IconButton(
-                        icon: const Icon(Icons.person_add, color: Colors.white),
-                        tooltip: "Add Friend",
-                        onPressed: () async {
-                          final success =
-                              await context.read<CardProvider>().addFriend(widget.card.id);
-                          if (!mounted) return;
-                          if (success) {
-                            setState(() {
-                              _friendRequestStatus = 'pending';
-                            });
-                            _showToast("Friend request sent");
-                          }
-                        },
-                      )
-                    else if (_friendRequestStatus == 'pending')
-                      _buildStatusChip('Pending', Colors.orange)
-                    else if (_isFriend)
-                      _buildStatusChip('Friend', Colors.green),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Hero(
+                          tag: 'avatar_${widget.card.id}_${widget.card.fullName}',
+                          child: Container(
+                            width: 58,
+                            height: 58,
+                            padding: const EdgeInsets.all(2.5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.white.withOpacity(isDark ? .85 : 1),
+                                  (isDark
+                                          ? AppColors.secondary
+                                          : const Color(0xFF7DD3FC))
+                                      .withOpacity(.55),
+                                ],
+                              ),
+                            ),
+                            child: CircleAvatar(
+                              backgroundColor: isDark
+                                  ? const Color(0xFF0B1630)
+                                  : Colors.white,
+                              foregroundImage:
+                                  avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                              child: Text(
+                                firstLetter,
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF3156A6),
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  _miniChip(
+                                    widget.card.cardType == 'saved_card'
+                                        ? 'Saved'
+                                        : 'Profile',
+                                  ),
+                                  if (_friendRequestStatus == 'pending')
+                                    _miniChip('Pending', accent: true)
+                                  else if (_isFriend)
+                                    _miniChip('Friend', accent: true),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                widget.card.fullName,
+                                style: TextStyle(
+                                  color: titleColor,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.05,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                widget.card.position.isEmpty
+                                    ? 'Professional profile'
+                                    : widget.card.position,
+                                style: TextStyle(
+                                  color: mutedText,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (canSendRequest)
+                          _ActionOrb(
+                            icon: Icons.person_add_alt_1,
+                            onTap: () async {
+                              final success = await context
+                                  .read<CardProvider>()
+                                  .addFriend(widget.card.id);
+                              if (!mounted) return;
+                              if (success) {
+                                setState(() {
+                                  _friendRequestStatus = 'pending';
+                                });
+                                _showToast("Friend request sent");
+                              }
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: infoPanelColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white.withOpacity(.12)
+                              : const Color(0x66D8E6FF),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          if (widget.card.company != null)
+                            _infoRow(
+                              icon: Icons.business_rounded,
+                              text: widget.card.company!.name,
+                              iconColor: accentText,
+                              textColor: titleColor,
+                            ),
+                          if (widget.card.phones.isNotEmpty)
+                            _contactRow(
+                              icon: Icons.phone_rounded,
+                              items: widget.card.phones,
+                              iconColor: accentText,
+                              textColor: titleColor,
+                            ),
+                          if (widget.card.emails.isNotEmpty)
+                            _contactRow(
+                              icon: Icons.email_rounded,
+                              items: widget.card.emails,
+                              iconColor: accentText,
+                              textColor: titleColor,
+                            ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 18),
-                Container(
-                  height: 1,
-                  width: double.infinity,
-                  color: Colors.white.withOpacity(.15),
-                ),
-                const SizedBox(height: 14),
-                if (widget.card.company != null)
-                  _infoRow(
-                    icon: Icons.business_rounded,
-                    text: widget.card.company!.name,
-                  ),
-                if (widget.card.phones.isNotEmpty)
-                  _contactRow(
-                    icon: Icons.phone_rounded,
-                    items: widget.card.phones,
-                  ),
-                if (widget.card.emails.isNotEmpty)
-                  _contactRow(
-                    icon: Icons.email_rounded,
-                    items: widget.card.emails,
-                  ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildStatusChip(String label, Color color) {
+  Widget _miniChip(String label, {bool accent = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.18),
+        color: accent
+            ? (isDark ? const Color(0x26C7B8FF) : const Color(0x1F4B83FF))
+            : (isDark
+                ? Colors.white.withOpacity(.11)
+                : Colors.white.withOpacity(.12)),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: accent
+              ? (isDark ? const Color(0x5595F3FF) : const Color(0x664B83FF))
+              : (isDark
+                  ? Colors.white.withOpacity(.12)
+                  : Colors.white.withOpacity(.16)),
+        ),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: Colors.white.withOpacity(0.95),
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+          color: accent
+              ? (isDark ? const Color(0xFFE7FBFF) : Colors.white)
+              : Colors.white,
+          fontSize: 11.5,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
@@ -217,19 +361,21 @@ class _CardItemState extends State<CardItem> {
   Widget _infoRow({
     required IconData icon,
     required String text,
+    required Color iconColor,
+    required Color textColor,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white70, size: 18),
+          Icon(icon, color: iconColor, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w700,
                 fontSize: 15,
               ),
               maxLines: 1,
@@ -244,6 +390,8 @@ class _CardItemState extends State<CardItem> {
   Widget _contactRow({
     required IconData icon,
     required List<String> items,
+    required Color iconColor,
+    required Color textColor,
   }) {
     if (items.isEmpty) return const SizedBox.shrink();
     final primary = items.first;
@@ -252,14 +400,15 @@ class _CardItemState extends State<CardItem> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white70, size: 17),
+          Icon(icon, color: iconColor, size: 17),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               primary,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -270,53 +419,37 @@ class _CardItemState extends State<CardItem> {
   }
 }
 
-class _FriendRequestToast extends StatelessWidget {
-  final String message;
-  final bool isError;
+class _ActionOrb extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
 
-  const _FriendRequestToast({
-    required this.message,
-    required this.isError,
-  });
+  const _ActionOrb({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    const successBg = Color(0xFFDCEBFF);
-    const successText = Color(0xFF1E3A8A);
-    const errorBg = Color(0xFFFEE2E2);
-    const errorText = Color(0xFFB42318);
-
-    return SafeArea(
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              decoration: BoxDecoration(
-                color: isError ? errorBg : successBg,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(.08),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isError ? errorText : successText,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Ink(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withOpacity(.12)
+              : Colors.white.withOpacity(.18),
+          border: Border.all(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withOpacity(.14)
+                : Colors.white.withOpacity(.18),
           ),
+        ),
+        child: Icon(
+          icon,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white
+              : Colors.white,
+          size: 20,
         ),
       ),
     );

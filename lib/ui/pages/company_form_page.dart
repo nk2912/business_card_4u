@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../bloc/company/company_provider.dart';
+import '../../core/theme/app_colors.dart';
 import '../../data/models/company_model.dart';
+import '../components/app_primary_button.dart';
+import '../components/app_toast.dart';
 import '../components/loading_view.dart';
+import '../components/theme_toggle_button.dart';
 
 class CompanyFormPage extends StatefulWidget {
   final CompanyModel? company;
@@ -92,29 +96,33 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
       Navigator.of(context).pop(result);
     } else {
       final errorMsg = provider.errorMessage ?? 'Failed to save company details';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMsg),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppToast.show(
+        context,
+        errorMsg,
+        type: AppToastType.error,
       );
     }
   }
 
   InputDecoration _inputDecoration(String label, IconData icon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon, color: const Color(0xFF2563EB), size: 22),
-      labelStyle: const TextStyle(color: Colors.black54, fontSize: 14),
-      floatingLabelStyle: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
+      labelStyle: TextStyle(
+        color: isDark ? const Color(0xFF98A7C2) : Colors.black54,
+        fontSize: 14,
+      ),
+      floatingLabelStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+        borderSide: BorderSide(
+          color: isDark ? const Color(0xFF1F2A44) : Colors.grey.withOpacity(0.2),
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -125,7 +133,7 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
         borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
       ),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: isDark ? const Color(0xFF0D1426) : Colors.white,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
@@ -134,20 +142,27 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
   Widget build(BuildContext context) {
     final saving = context.watch<CompanyProvider>().isSaving;
     final isEdit = widget.company != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFD),
+      backgroundColor: isDark ? const Color(0xFF060B16) : AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF060B16) : Colors.white,
         elevation: 0,
         centerTitle: true,
         title: Text(
           isEdit ? 'Edit Company' : 'New Company',
-          style: const TextStyle(color: Color(0xFF1F2937), fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: isDark ? Colors.white : const Color(0xFF1F2937),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black87),
+          icon: Icon(Icons.close, color: isDark ? Colors.white : Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          ThemeToggleButton(color: isDark ? Colors.white : Colors.black87),
+        ],
       ),
       body: Stack(
         children: [
@@ -158,14 +173,21 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     "Company Profile",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? const Color(0xFFEAF1FF) : const Color(0xFF1F2937),
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     "Fill in the details below to create a premium business profile.",
-                    style: TextStyle(color: Colors.black54, fontSize: 13),
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFF98A7C2) : Colors.black54,
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   TextFormField(
@@ -200,9 +222,13 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
                     maxLines: 3,
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     "Contact Information",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? const Color(0xFFEAF1FF) : const Color(0xFF1F2937),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -233,36 +259,12 @@ class _CompanyFormPageState extends State<CompanyFormPage> {
                     ],
                   ),
                   const SizedBox(height: 40),
-                  SizedBox(
-                    width: double.infinity,
+                  AppPrimaryButton(
+                    text: isEdit ? 'UPDATE COMPANY' : 'CREATE COMPANY',
+                    loading: saving,
+                    onPressed: saving ? null : _save,
                     height: 56,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2563EB), Color(0xFF1E3C72)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF2563EB).withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        ),
-                        onPressed: saving ? null : _save,
-                        child: Text(
-                          isEdit ? 'UPDATE COMPANY' : 'CREATE COMPANY',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1),
-                        ),
-                      ),
-                    ),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   const SizedBox(height: 20),
                 ],

@@ -5,6 +5,7 @@ import '../../bloc/card/card_provider.dart';
 import '../../core/network/image_url.dart';
 import '../../data/models/business_card_model.dart';
 import '../components/loading_view.dart';
+import '../components/theme_toggle_button.dart';
 
 class FriendRequestsPage extends StatefulWidget {
   const FriendRequestsPage({super.key});
@@ -73,16 +74,23 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFD),
+      backgroundColor: isDark ? const Color(0xFF060B16) : const Color(0xFFF8FAFD),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Friend Requests',
-          style: TextStyle(fontWeight: FontWeight.w800),
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            color: isDark ? Colors.white : const Color(0xFF0B1220),
+          ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF060B16) : Colors.white,
         elevation: 0,
-        surfaceTintColor: Colors.white,
+        surfaceTintColor: isDark ? const Color(0xFF060B16) : Colors.white,
+        actions: [
+          ThemeToggleButton(color: isDark ? Colors.white : Colors.black87),
+        ],
       ),
       body: _isLoading
           ? const Center(child: LoadingView(size: 90))
@@ -92,7 +100,9 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
                     'No pending friend requests',
                     style: TextStyle(
                       fontSize: 15,
-                      color: Colors.black.withOpacity(.55),
+                      color: isDark
+                          ? const Color(0xFF98A7C2)
+                          : Colors.black.withOpacity(.55),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -164,6 +174,7 @@ class _FriendRequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasImage = card.profileImage != null && card.profileImage!.isNotEmpty;
     final avatarUrl = hasImage ? ImageUrl.resolve(card.profileImage!) : null;
     final requestedAt = _relativeTime(card.createdAt);
@@ -172,16 +183,20 @@ class _FriendRequestCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0D1426) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.18 : 0.05),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: Colors.black.withOpacity(.06)),
+        border: Border.all(
+          color: isDark
+              ? const Color(0xFF1F2A44)
+              : Colors.black.withOpacity(.06),
+        ),
       ),
       child: Column(
         children: [
@@ -189,12 +204,16 @@ class _FriendRequestCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: const Color(0xFFE9EDF4),
+                backgroundColor:
+                    isDark ? const Color(0xFF18243E) : const Color(0xFFE9EDF4),
                 backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
                 child: avatarUrl == null
                     ? Text(
                         card.fullName.isNotEmpty ? card.fullName[0].toUpperCase() : '',
-                        style: const TextStyle(fontWeight: FontWeight.w900),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? Colors.white : const Color(0xFF0B1220),
+                        ),
                       )
                     : null,
               ),
@@ -205,17 +224,19 @@ class _FriendRequestCard extends StatelessWidget {
                   children: [
                     Text(
                       card.fullName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF0B1220),
+                        color: isDark ? const Color(0xFFEAF1FF) : const Color(0xFF0B1220),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       card.position.isEmpty ? 'Requested to add you' : card.position,
                       style: TextStyle(
-                        color: Colors.black.withOpacity(.55),
+                        color: isDark
+                            ? const Color(0xFF98A7C2)
+                            : Colors.black.withOpacity(.55),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -224,7 +245,9 @@ class _FriendRequestCard extends StatelessWidget {
                       Text(
                         requestedAt,
                         style: TextStyle(
-                          color: Colors.black.withOpacity(.42),
+                          color: isDark
+                              ? const Color(0xFF7F90AF)
+                              : Colors.black.withOpacity(.42),
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
@@ -241,9 +264,11 @@ class _FriendRequestCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFFDCEBFF),
+                color: isDark ? const Color(0xFF13213A) : const Color(0xFFDCEBFF),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFBFDBFE)),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF294776) : const Color(0xFFBFDBFE),
+                ),
               ),
               child: const Text(
                 'You are now friends',
@@ -261,8 +286,13 @@ class _FriendRequestCard extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: isBusy ? null : onReject,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF0B1220),
-                      side: BorderSide(color: Colors.black.withOpacity(.15)),
+                      foregroundColor:
+                          isDark ? Colors.white : const Color(0xFF0B1220),
+                      side: BorderSide(
+                        color: isDark
+                            ? const Color(0xFF2A3652)
+                            : Colors.black.withOpacity(.15),
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),

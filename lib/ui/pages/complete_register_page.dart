@@ -2,7 +2,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../bloc/auth/auth_provider.dart';
+import '../../core/theme/app_colors.dart';
+import '../components/app_primary_button.dart';
+import '../components/app_toast.dart';
 import '../components/loading_view.dart';
+import '../components/theme_toggle_button.dart';
 
 class CompleteRegisterPage extends StatefulWidget {
   final String email;
@@ -38,29 +42,10 @@ class _CompleteRegisterPageState extends State<CompleteRegisterPage> {
   }
 
   void _showMessage(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: TextStyle(
-            color: isError ? Colors.white : const Color(0xFF1E3A8A),
-            fontWeight: FontWeight.w700,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        backgroundColor:
-            isError ? const Color(0xFFD64545) : const Color(0xFFDCEBFF),
-        behavior: SnackBarBehavior.floating,
-        elevation: 0,
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(
-            color: isError ? Colors.transparent : const Color(0xFFBFDBFE),
-          ),
-        ),
-      ),
+    AppToast.show(
+      context,
+      message,
+      type: isError ? AppToastType.error : AppToastType.success,
     );
   }
 
@@ -91,7 +76,7 @@ class _CompleteRegisterPageState extends State<CompleteRegisterPage> {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE9EDF4),
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           const _PremiumBackground(),
@@ -111,6 +96,8 @@ class _CompleteRegisterPageState extends State<CompleteRegisterPage> {
                           icon: Icons.arrow_back_rounded,
                           onTap: () => Navigator.pop(context),
                         ),
+                        const SizedBox(width: 8),
+                        const ThemeToggleButton(color: Colors.white),
                         const SizedBox(width: 12),
                         const Text(
                           "Create Account",
@@ -283,10 +270,13 @@ class _CompleteRegisterPageState extends State<CompleteRegisterPage> {
 
                             const SizedBox(height: 18),
 
-                            _GradientButton(
+                            AppPrimaryButton(
                               text: "Create Account",
                               loading: auth.isLoading,
                               onPressed: auth.isLoading ? null : () => _submit(auth),
+                              height: 54,
+                              borderRadius: BorderRadius.circular(18),
+                              fontSize: 15.5,
                             ),
                           ],
                         ),
@@ -333,12 +323,12 @@ class _PremiumBackground extends StatelessWidget {
         Positioned(
           top: -120,
           left: -60,
-          child: _BlurBlob(size: 260, color: const Color(0xFF1E3C72).withOpacity(.22)),
+          child: _BlurBlob(size: 260, color: AppColors.secondary.withOpacity(.22)),
         ),
         Positioned(
           bottom: -140,
           right: -80,
-          child: _BlurBlob(size: 320, color: const Color(0xFF2A5298).withOpacity(.18)),
+          child: _BlurBlob(size: 320, color: AppColors.secondaryLight.withOpacity(.18)),
         ),
         Positioned(
           top: 220,
@@ -488,60 +478,6 @@ class _PremiumTextField extends StatelessWidget {
   }
 }
 
-class _GradientButton extends StatelessWidget {
-  final String text;
-  final bool loading;
-  final VoidCallback? onPressed;
-
-  const _GradientButton({
-    required this.text,
-    required this.loading,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 54,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1E3C72), Color(0xFF2A5298)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(.14),
-              blurRadius: 18,
-              offset: const Offset(0, 12),
-            ),
-          ],
-        ),
-        child: ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          ),
-          child: loading
-              ? const LoadingView(size: 30)
-              : Text(
-                  text,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15.5,
-                    letterSpacing: .2,
-                  ),
-                ),
-        ),
-      ),
-    );
-  }
-}
 
 class _LoadingGlassOverlay extends StatelessWidget {
   const _LoadingGlassOverlay();

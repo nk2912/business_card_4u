@@ -4,9 +4,12 @@ import 'package:provider/provider.dart';
 import '../../bloc/auth/auth_provider.dart';
 import '../../bloc/card/card_provider.dart';
 import '../../core/network/image_url.dart';
+import '../../core/theme/app_colors.dart';
 import '../../data/models/business_card_model.dart';
+import '../components/app_toast.dart';
 import '../components/loading_view.dart';
 import '../components/card_item.dart';
+import '../components/theme_toggle_button.dart';
 import 'add_card_page.dart';
 import 'company_select_page.dart';
 import 'scan_page.dart'; // Added import
@@ -97,6 +100,7 @@ class _CardPageState extends State<CardPage>
   }
 
   Widget _buildCompanyFilter(List<BusinessCardModel> cards) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     // Extract unique company names
     final companies = cards
         .where((c) => c.company != null)
@@ -126,14 +130,21 @@ class _CardPageState extends State<CardPage>
                   _selectedCompanyFilter = null;
                 });
               },
-              selectedColor: const Color(0xFF2563EB).withOpacity(0.1),
+              selectedColor: AppColors.primary.withOpacity(0.1),
               labelStyle: TextStyle(
-                color: isSelected ? const Color(0xFF2563EB) : Colors.grey[700],
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark ? const Color(0xFFB5C3DF) : Colors.grey[700]),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
-              backgroundColor: Colors.white,
+              backgroundColor:
+                  isDark ? const Color(0xFF10182B) : Colors.white,
               side: BorderSide(
-                color: isSelected ? const Color(0xFF2563EB) : Colors.grey[300]!,
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark
+                        ? const Color(0xFF26324D)
+                        : Colors.grey[300]!),
               ),
             );
           }
@@ -148,14 +159,18 @@ class _CardPageState extends State<CardPage>
                 _selectedCompanyFilter = isSelected ? null : company;
               });
             },
-            selectedColor: const Color(0xFF2563EB).withOpacity(0.1),
+            selectedColor: AppColors.primary.withOpacity(0.1),
             labelStyle: TextStyle(
-              color: isSelected ? const Color(0xFF2563EB) : Colors.grey[700],
+              color: isSelected
+                  ? AppColors.primary
+                  : (isDark ? const Color(0xFFB5C3DF) : Colors.grey[700]),
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
-            backgroundColor: Colors.white,
+            backgroundColor: isDark ? const Color(0xFF10182B) : Colors.white,
             side: BorderSide(
-              color: isSelected ? const Color(0xFF2563EB) : Colors.grey[300]!,
+              color: isSelected
+                  ? AppColors.primary
+                  : (isDark ? const Color(0xFF26324D) : Colors.grey[300]!),
             ),
           );
         },
@@ -164,6 +179,7 @@ class _CardPageState extends State<CardPage>
   }
 
   Widget _buildCardList(List<BusinessCardModel> cards, bool isLoading) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (isLoading) {
       return const Center(
         child: LoadingView(size: 90),
@@ -176,9 +192,9 @@ class _CardPageState extends State<CardPage>
       return Center(
         child: Text(
           _query.isEmpty ? "No cards found" : "No results for '$_query'",
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 15,
-            color: Colors.black54,
+            color: isDark ? const Color(0xFF98A7C2) : Colors.black54,
           ),
         ),
       );
@@ -202,9 +218,10 @@ class _CardPageState extends State<CardPage>
   }
 
   void _showAddOptions(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF0D1426) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -214,9 +231,19 @@ class _CardPageState extends State<CardPage>
             children: [
               ListTile(
                 leading:
-                    const Icon(Icons.qr_code_scanner, color: Color(0xFF2563EB)),
-                title: const Text('Scan QR Code'),
-                subtitle: const Text('Add friend by scanning their QR code'),
+                    const Icon(Icons.qr_code_scanner, color: AppColors.primary),
+                title: Text(
+                  'Scan QR Code',
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFFEAF1FF) : const Color(0xFF0B1220),
+                  ),
+                ),
+                subtitle: Text(
+                  'Add friend by scanning their QR code',
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFF98A7C2) : Colors.black54,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(ctx);
                   Navigator.push(
@@ -226,9 +253,19 @@ class _CardPageState extends State<CardPage>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.search, color: Color(0xFF2563EB)),
-                title: const Text('Search Users'),
-                subtitle: const Text('Find users by name or company'),
+                leading: const Icon(Icons.search, color: AppColors.primary),
+                title: Text(
+                  'Search Users',
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFFEAF1FF) : const Color(0xFF0B1220),
+                  ),
+                ),
+                subtitle: Text(
+                  'Find users by name or company',
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFF98A7C2) : Colors.black54,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(ctx);
                   Navigator.push(
@@ -245,32 +282,12 @@ class _CardPageState extends State<CardPage>
   }
 
   void _showInfoMessage(String message) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: Color(0xFF1E3A8A),
-            fontWeight: FontWeight.w700,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        backgroundColor: const Color(0xFFDCEBFF),
-        behavior: SnackBarBehavior.floating,
-        elevation: 0,
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: Color(0xFFBFDBFE)),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    AppToast.show(context, message, type: AppToastType.info);
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_tabController == null) {
       _initTabController();
     }
@@ -343,15 +360,16 @@ class _CardPageState extends State<CardPage>
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFD),
+      backgroundColor: isDark ? const Color(0xFF060B16) : AppColors.surface,
       drawer: Drawer(
+        backgroundColor: isDark ? const Color(0xFF0B1220) : Colors.white,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             UserAccountsDrawerHeader(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF1E3C72), Color(0xFF2A5298)],
+                  colors: [AppColors.secondary, AppColors.secondaryLight],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -379,14 +397,20 @@ class _CardPageState extends State<CardPage>
                         style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E3C72)),
+                            color: AppColors.secondary),
                       )
                     : null,
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.person, color: Color(0xFF1E3C72)),
-              title: const Text('My Profile Card'),
+              leading: const Icon(Icons.person, color: AppColors.secondary),
+              title: Text(
+                'My Profile Card',
+                style: TextStyle(
+                  color:
+                      isDark ? const Color(0xFFEAF1FF) : const Color(0xFF0B1220),
+                ),
+              ),
               onTap: () {
                 Navigator.pop(context); // Close drawer
 
@@ -411,8 +435,14 @@ class _CardPageState extends State<CardPage>
             ),
             ListTile(
               leading:
-                  const Icon(Icons.business_rounded, color: Color(0xFF1E3C72)),
-              title: const Text('Manage Companies'),
+                  const Icon(Icons.business_rounded, color: AppColors.secondary),
+              title: Text(
+                'Manage Companies',
+                style: TextStyle(
+                  color:
+                      isDark ? const Color(0xFFEAF1FF) : const Color(0xFF0B1220),
+                ),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -427,8 +457,13 @@ class _CardPageState extends State<CardPage>
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
-              title: const Text('Logout',
-                  style: TextStyle(color: Colors.redAccent)),
+              title: const Text(
+                'Logout',
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 context.read<AuthProvider>().logout();
@@ -438,23 +473,24 @@ class _CardPageState extends State<CardPage>
         ),
       ),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF060B16) : Colors.white,
         elevation: 0,
-        iconTheme:
-            const IconThemeData(color: Colors.black87), // Hamburger color
+        iconTheme: IconThemeData(
+          color: isDark ? Colors.white : Colors.black87,
+        ),
         title: RichText(
-          text: const TextSpan(
+          text: TextSpan(
             text: "businessCard",
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
+              color: isDark ? Colors.white : const Color(0xFF1F2937),
             ),
-            children: [
+            children: const [
               TextSpan(
                 text: "4U",
                 style: TextStyle(
-                  color: Color(0xFF2563EB),
+                  color: AppColors.primary,
                 ),
               ),
             ],
@@ -463,9 +499,9 @@ class _CardPageState extends State<CardPage>
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
-          labelColor: const Color(0xFF2563EB),
+          labelColor: AppColors.primary,
           unselectedLabelColor: Colors.grey,
-          indicatorColor: const Color(0xFF2563EB),
+          indicatorColor: AppColors.primary,
           tabs: const [
             Tab(text: "My Friend's Cards"), // user_card
             Tab(text: "My Saved Cards"), // my_card
@@ -500,7 +536,10 @@ class _CardPageState extends State<CardPage>
                           child: child,
                         );
                       },
-                      child: const Icon(Icons.notifications_none, color: Colors.black87),
+                      child: Icon(
+                        Icons.notifications_none,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
                     ),
                     if (count > 0)
                       Positioned(
@@ -529,6 +568,7 @@ class _CardPageState extends State<CardPage>
               );
             },
           ),
+          const ThemeToggleButton(),
         ],
       ),
       body: Column(
@@ -540,11 +580,16 @@ class _CardPageState extends State<CardPage>
               padding: const EdgeInsets.symmetric(horizontal: 16),
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF10182B) : Colors.white,
                 borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF1F2A44)
+                      : Colors.transparent,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(.04),
+                    color: Colors.black.withOpacity(isDark ? .16 : .04),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
@@ -556,10 +601,20 @@ class _CardPageState extends State<CardPage>
                   Navigator.push(context,
                       MaterialPageRoute(builder: (_) => const SearchPage()));
                 },
-                decoration: const InputDecoration(
-                  icon: Icon(Icons.search, size: 20),
+                decoration: InputDecoration(
+                  icon: Icon(
+                    Icons.search,
+                    size: 20,
+                    color: isDark ? const Color(0xFF98A7C2) : Colors.black54,
+                  ),
                   hintText: "Search users...",
+                  hintStyle: TextStyle(
+                    color: isDark ? const Color(0xFF98A7C2) : Colors.black45,
+                  ),
                   border: InputBorder.none,
+                ),
+                style: TextStyle(
+                  color: isDark ? const Color(0xFFEAF1FF) : const Color(0xFF0B1220),
                 ),
               ),
             ),
@@ -589,7 +644,7 @@ class _CardPageState extends State<CardPage>
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'action_fab',
-        backgroundColor: const Color(0xFF2563EB),
+        backgroundColor: AppColors.primary,
         elevation: 6,
         onPressed: () {
           // Both tabs allow adding something

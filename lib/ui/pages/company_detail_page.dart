@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/theme/app_colors.dart';
+import '../components/theme_toggle_button.dart';
 import '../../data/models/company_model.dart';
 
 class CompanyDetailPage extends StatelessWidget {
@@ -9,30 +11,31 @@ class CompanyDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFD),
+      backgroundColor: isDark ? const Color(0xFF060B16) : const Color(0xFFF8FAFD),
       body: CustomScrollView(
         slivers: [
-          _buildAppBar(context),
+          _buildAppBar(context, isDark),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildMainInfo(),
+                  _buildMainInfo(context),
                   const SizedBox(height: 24),
-                  _buildSectionTitle("Contact Details"),
-                  _buildContactCard(),
+                  _buildSectionTitle(context, "Contact Details"),
+                  _buildContactCard(context),
                   const SizedBox(height: 24),
                   if (company.description != null && company.description!.isNotEmpty) ...[
-                    _buildSectionTitle("About Company"),
-                    _buildAboutCard(),
+                    _buildSectionTitle(context, "About Company"),
+                    _buildAboutCard(context),
                     const SizedBox(height: 24),
                   ],
                   if (company.socials.isNotEmpty) ...[
-                    _buildSectionTitle("Social Presence"),
-                    _buildSocialsCard(),
+                    _buildSectionTitle(context, "Social Presence"),
+                    _buildSocialsCard(context),
                   ],
                 ],
               ),
@@ -43,22 +46,27 @@ class CompanyDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  Widget _buildAppBar(BuildContext context, bool isDark) {
     return SliverAppBar(
       expandedHeight: 180,
       pinned: true,
-      backgroundColor: const Color(0xFF1E3C72),
+      backgroundColor: isDark ? const Color(0xFF060B16) : const Color(0xFF1E3C72),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
         onPressed: () => Navigator.pop(context),
       ),
+      actions: const [
+        ThemeToggleButton(color: Colors.white),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF1E3C72), Color(0xFF2A5298)],
+              colors: isDark
+                  ? const [Color(0xFF070D19), Color(0xFF172443)]
+                  : const [Color(0xFF1E3C72), Color(0xFF2A5298)],
             ),
           ),
           child: Center(
@@ -91,15 +99,19 @@ class CompanyDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMainInfo() {
+  Widget _buildMainInfo(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0D1426) : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1F2A44) : Colors.transparent,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.18 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -107,23 +119,27 @@ class CompanyDetailPage extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _infoItem(Icons.category_rounded, company.industry ?? "General"),
+          _infoItem(context, Icons.category_rounded, company.industry ?? "General"),
           const VerticalDivider(),
-          _infoItem(Icons.work_outline_rounded, company.businessType ?? "Corporate"),
+          _infoItem(context, Icons.work_outline_rounded, company.businessType ?? "Corporate"),
         ],
       ),
     );
   }
 
-  Widget _infoItem(IconData icon, String text) {
+  Widget _infoItem(BuildContext context, IconData icon, String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, color: const Color(0xFF2563EB), size: 24),
+          Icon(icon, color: isDark ? const Color(0xFF8FB6FF) : AppColors.primary, size: 24),
           const SizedBox(height: 8),
           Text(
             text,
-            style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: isDark ? const Color(0xFFEAF1FF) : const Color(0xFF1F2937),
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -131,49 +147,58 @@ class CompanyDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 12),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF1F2937),
+          color: isDark ? const Color(0xFFEAF1FF) : const Color(0xFF1F2937),
         ),
       ),
     );
   }
 
-  Widget _buildContactCard() {
+  Widget _buildContactCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0D1426) : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1F2A44) : Colors.transparent,
+        ),
       ),
       child: Column(
         children: [
           if (company.email != null)
             _contactTile(
+              context,
               Icons.email_outlined,
               company.email!,
               onTap: () => _launchEmail(company.email!),
             ),
           if (company.phone != null)
             _contactTile(
+              context,
               Icons.phone_android_rounded,
               company.phone!,
               onTap: () => _launchPhone(company.phone!),
             ),
           if (company.website != null)
             _contactTile(
+              context,
               Icons.language_rounded,
               company.website!,
               onTap: () => _launchWebsite(company.website!),
             ),
           if (company.address != null)
             _contactTile(
+              context,
               Icons.location_on_outlined,
               company.address!,
               onTap: () => _launchMaps(company.address!),
@@ -183,19 +208,23 @@ class CompanyDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _contactTile(IconData icon, String text, {VoidCallback? onTap}) {
+  Widget _contactTile(BuildContext context, IconData icon, String text, {VoidCallback? onTap}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            Icon(icon, color: Colors.blueGrey, size: 20),
+            Icon(icon, color: isDark ? const Color(0xFF8FB6FF) : Colors.blueGrey, size: 20),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 text,
-                style: const TextStyle(color: Colors.black87, fontSize: 14),
+                style: TextStyle(
+                  color: isDark ? const Color(0xFFEAF1FF) : Colors.black87,
+                  fontSize: 14,
+                ),
               ),
             ),
           ],
@@ -204,47 +233,69 @@ class CompanyDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildAboutCard() {
+  Widget _buildAboutCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0D1426) : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1F2A44) : Colors.transparent,
+        ),
       ),
       child: Text(
         company.description!,
-        style: const TextStyle(color: Colors.black54, height: 1.5),
+        style: TextStyle(
+          color: isDark ? const Color(0xFF98A7C2) : Colors.black54,
+          height: 1.5,
+        ),
       ),
     );
   }
 
-  Widget _buildSocialsCard() {
+  Widget _buildSocialsCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0D1426) : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1F2A44) : Colors.transparent,
+        ),
       ),
       child: Wrap(
         spacing: 12,
         runSpacing: 12,
-        children: company.socials.map((s) => _socialChip(s.platform)).toList(),
+        children: company.socials.map((s) => _socialChip(context, s.platform)).toList(),
       ),
     );
   }
 
-  Widget _socialChip(String platform) {
+  Widget _socialChip(BuildContext context, String platform) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF2563EB).withOpacity(0.08),
+        color: isDark
+            ? const Color(0xFF131D31)
+            : const Color(0xFF2563EB).withOpacity(0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.1)),
+        border: Border.all(
+          color: isDark
+              ? const Color(0xFF24304B)
+              : const Color(0xFF2563EB).withOpacity(0.1),
+        ),
       ),
       child: Text(
         platform,
-        style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold, fontSize: 12),
+        style: TextStyle(
+          color: isDark ? const Color(0xFFD8E4FF) : const Color(0xFF2563EB),
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
       ),
     );
   }

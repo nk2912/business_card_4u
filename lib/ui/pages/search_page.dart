@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../bloc/card/card_provider.dart';
 import '../../bloc/company/company_provider.dart';
+import '../../core/theme/app_colors.dart';
 import '../../data/models/business_card_model.dart';
 import '../components/card_item.dart';
 import '../components/loading_view.dart';
+import '../components/theme_toggle_button.dart';
 import '../../data/models/company_model.dart';
 
 class SearchPage extends StatefulWidget {
@@ -59,28 +61,31 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     final companyProvider = context.watch<CompanyProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFD),
+      backgroundColor: isDark ? const Color(0xFF060B16) : const Color(0xFFF8FAFD),
       appBar: AppBar(
-        title: const Text('Search Users'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1E3C72), Color(0xFF2A5298)],
-            ),
+        title: Text(
+          'Search Users',
+          style: TextStyle(
+            color: isDark ? Colors.white : const Color(0xFF0B1220),
+            fontWeight: FontWeight.w800,
           ),
         ),
+        backgroundColor: isDark ? const Color(0xFF060B16) : Colors.white,
+        elevation: 0,
+        surfaceTintColor: isDark ? const Color(0xFF060B16) : Colors.white,
+        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black87),
+        actions: [
+          ThemeToggleButton(color: isDark ? Colors.white : Colors.black87),
+        ],
       ),
       body: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.white,
+            color: isDark ? const Color(0xFF0B1220) : Colors.white,
             child: Column(
               children: [
                 // Search Input
@@ -88,14 +93,27 @@ class _SearchPageState extends State<SearchPage> {
                   controller: _searchCtrl,
                   decoration: InputDecoration(
                     hintText: 'Search by name or position...',
-                    prefixIcon: const Icon(Icons.search),
+                    hintStyle: TextStyle(
+                      color: isDark
+                          ? const Color(0xFF98A7C2)
+                          : Colors.black45,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: isDark
+                          ? const Color(0xFF98A7C2)
+                          : Colors.grey,
+                    ),
                     filled: true,
-                    fillColor: Colors.grey.shade100,
+                    fillColor: isDark ? const Color(0xFF10182B) : Colors.grey.shade100,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFFEAF1FF) : Colors.black87,
                   ),
                   onSubmitted: (_) => _performSearch(),
                 ),
@@ -105,23 +123,40 @@ class _SearchPageState extends State<SearchPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: isDark ? const Color(0xFF10182B) : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.business, color: Colors.grey),
+                      Icon(Icons.business, color: isDark ? const Color(0xFF98A7C2) : Colors.grey),
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<int?>(
                             isExpanded: true,
                             value: _selectedCompany?.id,
-                            hint: const Text('Filter by Company'),
+                            dropdownColor:
+                                isDark ? const Color(0xFF10182B) : Colors.white,
+                            iconEnabledColor: isDark
+                                ? const Color(0xFF98A7C2)
+                                : Colors.grey,
+                            hint: Text(
+                              'Filter by Company',
+                              style: TextStyle(
+                                color: isDark ? const Color(0xFF98A7C2) : Colors.black54,
+                              ),
+                            ),
                             items: companyProvider.companies.map(
                               (company) => DropdownMenuItem<int?>(
                                 value: company.id,
-                                child: Text(company.name),
+                                child: Text(
+                                  company.name,
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? const Color(0xFFEAF1FF)
+                                        : const Color(0xFF0B1220),
+                                  ),
+                                ),
                               ),
                             ).toList(),
                             onChanged: companyProvider.isLoading
@@ -148,7 +183,13 @@ class _SearchPageState extends State<SearchPage> {
                         )
                       else if (_selectedCompany != null)
                         IconButton(
-                          icon: const Icon(Icons.close, size: 20),
+                          icon: Icon(
+                            Icons.close,
+                            size: 20,
+                            color: isDark
+                                ? const Color(0xFF98A7C2)
+                                : Colors.black54,
+                          ),
                           onPressed: () {
                             setState(() => _selectedCompany = null);
                             _performSearch();
@@ -163,7 +204,7 @@ class _SearchPageState extends State<SearchPage> {
                   child: ElevatedButton(
                     onPressed: _performSearch,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
+                      backgroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -190,7 +231,10 @@ class _SearchPageState extends State<SearchPage> {
                               _searchCtrl.text.isEmpty && _selectedCompany == null
                                   ? 'Start searching to find users'
                                   : 'No users found',
-                              style: const TextStyle(color: Colors.grey, fontSize: 16),
+                              style: TextStyle(
+                                color: isDark ? const Color(0xFF98A7C2) : Colors.grey,
+                                fontSize: 16,
+                              ),
                             ),
                           ],
                         ),
