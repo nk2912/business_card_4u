@@ -6,7 +6,6 @@ import '../../core/theme/app_colors.dart';
 import '../components/app_primary_button.dart';
 import '../components/app_toast.dart';
 import '../components/loading_view.dart';
-import '../components/theme_toggle_button.dart';
 
 class CompleteRegisterPage extends StatefulWidget {
   final String email;
@@ -96,8 +95,6 @@ class _CompleteRegisterPageState extends State<CompleteRegisterPage> {
                           icon: Icons.arrow_back_rounded,
                           onTap: () => Navigator.pop(context),
                         ),
-                        const SizedBox(width: 8),
-                        const ThemeToggleButton(color: Colors.white),
                         const SizedBox(width: 12),
                         const Text(
                           "Create Account",

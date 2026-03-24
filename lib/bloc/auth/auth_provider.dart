@@ -23,6 +23,7 @@ class AuthProvider extends ChangeNotifier {
   bool isLoggedIn = false;
   UserModel? currentUser;
   String? pendingMessage;
+  String? lastErrorMessage;
 
   final _api = AuthApiImpl(DioClient.create());
   late final VoidCallback _unauthorizedListener;
@@ -39,6 +40,7 @@ class AuthProvider extends ChangeNotifier {
   /// ================= LOGIN =================
   Future<bool> login(String email, String password) async {
     isLoading = true;
+    lastErrorMessage = null;
     notifyListeners();
 
     try {
@@ -52,6 +54,8 @@ class AuthProvider extends ChangeNotifier {
       isLoggedIn = true;
       return true;
     } catch (e) {
+      final message = e.toString().replaceFirst('Exception: ', '').trim();
+      lastErrorMessage = message.isEmpty ? 'Login failed' : message;
       return false;
     } finally {
       isLoading = false;
@@ -194,6 +198,7 @@ class AuthProvider extends ChangeNotifier {
     isLoggedIn = false;
     currentUser = null;
     pendingMessage = 'Logged out successfully';
+    lastErrorMessage = null;
     notifyListeners();
   }
 
@@ -223,6 +228,7 @@ class AuthProvider extends ChangeNotifier {
     isLoggedIn = false;
     currentUser = null;
     pendingMessage = message;
+    lastErrorMessage = null;
     notifyListeners();
   }
 
@@ -231,6 +237,7 @@ class AuthProvider extends ChangeNotifier {
     isLoggedIn = false;
     currentUser = null;
     pendingMessage = null;
+    lastErrorMessage = null;
   }
 
   Future<void> prepareDeactivatedSession(String message) async {
@@ -238,6 +245,7 @@ class AuthProvider extends ChangeNotifier {
     isLoggedIn = false;
     currentUser = null;
     pendingMessage = message;
+    lastErrorMessage = null;
   }
 
   String? consumePendingMessage() {

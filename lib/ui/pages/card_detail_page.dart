@@ -3,14 +3,12 @@ import 'package:provider/provider.dart';
 
 import '../../bloc/auth/auth_provider.dart';
 import '../../bloc/card/card_provider.dart';
-import '../../core/navigation/app_navigator.dart';
 import '../../core/network/image_url.dart';
 import '../../data/models/business_card_model.dart';
 import '../../data/models/company_model.dart';
 import '../components/app_toast.dart';
 import 'add_card_page.dart';
 import 'deactivate_account_page.dart';
-import 'login_page.dart';
 
 class CardDetailPage extends StatelessWidget {
   final BusinessCardModel card;
@@ -209,7 +207,7 @@ class CardDetailPage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: 12),
               child: PopupMenuButton<String>(
-                icon: const Icon(Icons.more_horiz, color: Colors.white),
+                icon: const Icon(Icons.more_vert, color: Colors.white),
                 color: isDark ? const Color(0xFF121A2C) : Colors.white,
                 surfaceTintColor:
                     isDark ? const Color(0xFF121A2C) : Colors.white,
@@ -361,9 +359,9 @@ class CardDetailPage extends StatelessWidget {
           SafeArea(
             bottom: false,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
               children: [
-                const SizedBox(height: 64),
+                const SizedBox(height: 28),
                 _PremiumHeroCard(
                   card: card,
                   avatarUrl: avatarUrl,
@@ -472,7 +470,7 @@ class _PremiumHeroCard extends StatelessWidget {
     final titleColor = Colors.white;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         gradient: LinearGradient(
@@ -779,15 +777,18 @@ class _GlassActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(.12),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(.12)),
-      ),
+    return SizedBox(
+      width: 44,
+      height: 56,
       child: IconButton(
         onPressed: onPressed,
-        icon: Icon(icon, size: 18, color: Colors.white),
+        padding: EdgeInsets.zero,
+        splashRadius: 22,
+        icon: Icon(
+          icon,
+          size: 18,
+          color: Colors.white,
+        ),
       ),
     );
   }

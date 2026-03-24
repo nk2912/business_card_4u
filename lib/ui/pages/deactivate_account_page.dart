@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../auth_gate.dart';
 import '../../bloc/auth/auth_provider.dart';
 import '../../core/navigation/app_navigator.dart';
 import '../../core/theme/app_colors.dart';
 import '../components/app_primary_button.dart';
 import '../components/app_toast.dart';
-import 'login_page.dart';
 
 class DeactivateAccountPage extends StatefulWidget {
   const DeactivateAccountPage({super.key});
@@ -58,14 +58,14 @@ class _DeactivateAccountPageState extends State<DeactivateAccountPage> {
     final message = result.message ??
         'Your account has been deactivated. Log in again within 7 days to restore it.';
 
-    await auth.clearSessionSilently();
+    await auth.completeDeactivatedLogout(message);
 
     final navigator = appNavigatorKey.currentState;
     if (navigator == null) return;
 
     navigator.pushAndRemoveUntil(
       MaterialPageRoute(
-        builder: (_) => LoginPage(initialMessage: message),
+        builder: (_) => const AuthGate(),
       ),
       (route) => false,
     );

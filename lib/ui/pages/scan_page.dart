@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import '../../bloc/card/card_provider.dart';
-import '../../core/theme/app_colors.dart';
 import '../components/app_toast.dart';
 import '../components/loading_view.dart';
 import '../components/theme_toggle_button.dart';

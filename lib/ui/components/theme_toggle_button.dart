@@ -15,7 +15,7 @@ class ThemeToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<ThemeProvider>();
+    context.watch<ThemeProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final icon = isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded;
 

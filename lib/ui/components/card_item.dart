@@ -85,9 +85,9 @@ class _CardItemState extends State<CardItem> {
     final titleColor = isDark ? Colors.white : Colors.white;
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 5),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(30),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           stops: const [0, .34, .72, 1],
@@ -111,7 +111,7 @@ class _CardItemState extends State<CardItem> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(30),
           onTap: () {
             Navigator.push(
               context,
@@ -167,7 +167,7 @@ class _CardItemState extends State<CardItem> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -177,8 +177,8 @@ class _CardItemState extends State<CardItem> {
                         Hero(
                           tag: 'avatar_${widget.card.id}_${widget.card.fullName}',
                           child: Container(
-                            width: 58,
-                            height: 58,
+                            width: 52,
+                            height: 52,
                             padding: const EdgeInsets.all(2.5),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
@@ -206,14 +206,14 @@ class _CardItemState extends State<CardItem> {
                                   color: isDark
                                       ? Colors.white
                                       : const Color(0xFF3156A6),
-                                  fontSize: 22,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 14),
+                          const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,24 +233,24 @@ class _CardItemState extends State<CardItem> {
                                     _miniChip('Friend', accent: true),
                                 ],
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 6),
                               Text(
                                 widget.card.fullName,
                                 style: TextStyle(
                                   color: titleColor,
-                                  fontSize: 20,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w800,
                                   height: 1.05,
                                 ),
                               ),
-                              const SizedBox(height: 5),
+                              const SizedBox(height: 3),
                               Text(
                                 widget.card.position.isEmpty
                                     ? 'Professional profile'
                                     : widget.card.position,
                                 style: TextStyle(
                                   color: mutedText,
-                                  fontSize: 13.5,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -272,18 +272,35 @@ class _CardItemState extends State<CardItem> {
                                 _showToast("Friend request sent");
                               }
                             },
+                          )
+                        else ...[
+                          const SizedBox(width: 10),
+                          Icon(
+                            Icons.arrow_outward_rounded,
+                            size: 18,
+                            color:
+                                Colors.white.withOpacity(isDark ? .52 : .74),
                           ),
+                        ],
                       ],
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 14,
+                        horizontal: 12,
+                        vertical: 9,
                       ),
                       decoration: BoxDecoration(
                         color: infoPanelColor,
                         borderRadius: BorderRadius.circular(20),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white.withOpacity(isDark ? .07 : .18),
+                            Colors.white.withOpacity(isDark ? .03 : .10),
+                          ],
+                        ),
                         border: Border.all(
                           color: isDark
                               ? Colors.white.withOpacity(.12)
@@ -368,7 +385,7 @@ class _CardItemState extends State<CardItem> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, color: iconColor, size: 18),
+          _infoIcon(icon: icon, color: iconColor),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -376,7 +393,7 @@ class _CardItemState extends State<CardItem> {
               style: TextStyle(
                 color: textColor,
                 fontWeight: FontWeight.w700,
-                fontSize: 15,
+                fontSize: 14,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -397,17 +414,17 @@ class _CardItemState extends State<CardItem> {
     final primary = items.first;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          Icon(icon, color: iconColor, size: 17),
+          _infoIcon(icon: icon, color: iconColor),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               primary,
               style: TextStyle(
                 color: textColor,
-                fontSize: 13.5,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w600,
               ),
               overflow: TextOverflow.ellipsis,
@@ -415,6 +432,25 @@ class _CardItemState extends State<CardItem> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _infoIcon({
+    required IconData icon,
+    required Color color,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: 28,
+      height: 26,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: Colors.white.withOpacity(isDark ? .08 : .16),
+        border: Border.all(
+          color: Colors.white.withOpacity(isDark ? .10 : .18),
+        ),
+      ),
+      child: Icon(icon, color: color, size: 15),
     );
   }
 }

@@ -9,7 +9,6 @@ import '../../core/theme/app_colors.dart';
 import '../components/app_primary_button.dart';
 import '../components/app_toast.dart';
 import '../components/loading_view.dart';
-import '../components/theme_toggle_button.dart';
 import 'complete_register_page.dart';
 
 class OtpPage extends StatefulWidget {
@@ -141,8 +140,6 @@ class _OtpPageState extends State<OtpPage> {
                           onTap: () => Navigator.pop(context),
                         ),
                         const Spacer(),
-                        const ThemeToggleButton(color: Colors.white),
-                        const SizedBox(width: 8),
                         _TimerPill(
                           timeText: _formattedTime,
                           isExpired: _secondsRemaining == 0,

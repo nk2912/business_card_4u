@@ -5,11 +5,12 @@ import '../../bloc/auth/auth_provider.dart';
 import '../../bloc/card/card_provider.dart';
 import '../../core/network/image_url.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../data/models/business_card_model.dart';
 import '../components/app_toast.dart';
 import '../components/loading_view.dart';
 import '../components/card_item.dart';
-import '../components/theme_toggle_button.dart';
+import '../components/my_qr_panel.dart';
 import 'add_card_page.dart';
 import 'company_select_page.dart';
 import 'scan_page.dart'; // Added import
@@ -217,6 +218,77 @@ class _CardPageState extends State<CardPage>
     );
   }
 
+  void _showMyQrCode(BuildContext context, BusinessCardModel? myProfileCard) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.72,
+          minChildSize: 0.56,
+          maxChildSize: 0.92,
+          expand: false,
+          builder: (_, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF060B16) : const Color(0xFFF4F7FB),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                children: [
+                  Center(
+                    child: Container(
+                      width: 48,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF2A3550)
+                            : const Color(0xFFD5DDEA),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'My QR Code',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color:
+                          isDark ? const Color(0xFFEAF1FF) : const Color(0xFF0B1220),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Open this when someone wants to scan your card.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      color: isDark ? const Color(0xFF98A7C2) : Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: MyQrPanel(profileCard: myProfileCard),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showAddOptions(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
@@ -288,6 +360,7 @@ class _CardPageState extends State<CardPage>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeProvider = context.watch<ThemeProvider>();
     if (_tabController == null) {
       _initTabController();
     }
@@ -367,21 +440,34 @@ class _CardPageState extends State<CardPage>
           padding: EdgeInsets.zero,
           children: [
             UserAccountsDrawerHeader(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.secondary, AppColors.secondaryLight],
+                  colors: isDark
+                      ? const [Color(0xFF111A2E), Color(0xFF1D2F58)]
+                      : const [AppColors.secondary, AppColors.secondaryLight],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
               ),
               accountName: Text(
                 currentUser?.name ?? "User",
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: isDark ? const Color(0xFFF8FBFF) : Colors.white,
+                ),
               ),
-              accountEmail: Text(currentUser?.email ?? ""),
+              accountEmail: Text(
+                currentUser?.email ?? "",
+                style: TextStyle(
+                  color: isDark
+                      ? const Color(0xFFB8C7E6)
+                      : Colors.white.withOpacity(.92),
+                ),
+              ),
               currentAccountPicture: CircleAvatar(
-                backgroundColor: Colors.white,
+                backgroundColor:
+                    isDark ? const Color(0xFF0C1324) : Colors.white,
                 backgroundImage: (myProfileCard?.profileImage != null &&
                         myProfileCard!.profileImage!.isNotEmpty)
                     ? NetworkImage(
@@ -397,7 +483,7 @@ class _CardPageState extends State<CardPage>
                         style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.secondary),
+                            color: AppColors.secondaryLight),
                       )
                     : null,
               ),
@@ -454,6 +540,30 @@ class _CardPageState extends State<CardPage>
                 );
               },
             ),
+            SwitchListTile(
+              secondary: const Icon(
+                Icons.palette_outlined,
+                color: AppColors.secondary,
+              ),
+              title: Text(
+                'Theme',
+                style: TextStyle(
+                  color:
+                      isDark ? const Color(0xFFEAF1FF) : const Color(0xFF0B1220),
+                ),
+              ),
+              subtitle: Text(
+                themeProvider.isDark ? 'Dark mode' : 'Light mode',
+                style: TextStyle(
+                  color: isDark ? const Color(0xFF98A7C2) : Colors.black54,
+                ),
+              ),
+              value: themeProvider.isDark,
+              activeColor: AppColors.primary,
+              onChanged: (_) {
+                context.read<ThemeProvider>().toggle();
+              },
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
@@ -508,6 +618,14 @@ class _CardPageState extends State<CardPage>
           ],
         ),
         actions: [
+          IconButton(
+            onPressed: () => _showMyQrCode(context, myProfileCard),
+            icon: Icon(
+              Icons.qr_code_2_rounded,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+            tooltip: 'My QR Code',
+          ),
           Consumer<CardProvider>(
             builder: (context, provider, _) {
               final count = provider.friendRequests.length;
@@ -568,7 +686,6 @@ class _CardPageState extends State<CardPage>
               );
             },
           ),
-          const ThemeToggleButton(),
         ],
       ),
       body: Column(
@@ -647,13 +764,9 @@ class _CardPageState extends State<CardPage>
         backgroundColor: AppColors.primary,
         elevation: 6,
         onPressed: () {
-          // Both tabs allow adding something
-          // Tab 1 (Friends): Scan QR or Search to add friend
-          // Tab 2 (Saved): Add manual card
           if (_tabController?.index == 0) {
-            _showAddOptions(context); // Scan or Search
+            _showAddOptions(context);
           } else {
-            // Directly add manual card
             Navigator.of(context)
                 .push(MaterialPageRoute(builder: (_) => const AddCardPage()))
                 .then((created) {

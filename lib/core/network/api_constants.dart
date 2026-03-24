@@ -1,5 +1,6 @@
 class ApiConstants {
-  static const baseUrl = 'http://192.168.99.200:8000/api/';
+  static const baseUrl =
+      'https://abw-business-card-backend-main-fvb3ml.free.laravel.cloud/api/';
 
   static const login = "login";
   static const sendOtp = "send-otp";

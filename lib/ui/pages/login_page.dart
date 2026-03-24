@@ -180,7 +180,8 @@ class _LoginPageState extends State<LoginPage> {
                                 if (!success && context.mounted) {
                                   AppToast.show(
                                     context,
-                                    'Invalid email or password',
+                                    context.read<AuthProvider>().lastErrorMessage ??
+                                        'Invalid email or password',
                                     type: AppToastType.error,
                                   );
                                 }
